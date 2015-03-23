@@ -1,0 +1,9 @@
+(define r 10)
+
+(define r (+ r 2))
+
+(print r)
+
+(define square (lambda (x) (+ x x)))
+
+(print (square r))

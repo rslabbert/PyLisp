@@ -19,6 +19,8 @@ class Env(dict):
             ">=": op.ge,
             "<=": op.le,
             "not": op.not_,
+            "and": op.and_,
+            "or": op.or_,
             "#t": True,
             "#f": False})
 

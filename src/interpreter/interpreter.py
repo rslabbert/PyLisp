@@ -4,9 +4,7 @@ from os import environ
 
 from env import Env
 from core import coreKeywords
-from interpreter.evaluate import EVAL
-from interpreter.read import READ
-from interpreter.printer import PRINT
+from interpreter.rep import rep
 
 
 class Interpreter():
@@ -35,7 +33,7 @@ class Interpreter():
         self.completionCandidates = []
 
     def run(self, line):
-        PRINT(EVAL(READ(line), self.replEnv))
+        rep(line, self.replEnv)
 
     def complete(self, text, state):
         if state == 0:

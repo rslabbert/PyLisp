@@ -15,6 +15,8 @@ def do_define(expr1, expr2, EVAL, env):
 
 
 def do_lambda(args, expr, env):
+    if expr is None:
+        return tokens.function.Function([], args, env)
     return tokens.function.Function(args, expr, env)
 
 
@@ -42,6 +44,5 @@ def do_library(name, env, args):
 
 
 def do_import(name, EVAL, env):
-    print(env.get(name))
-    inp = EVAL(env.get(name), env)
+    inp, env = [EVAL(x, env) for x in env.get(name)]
     return inp, env

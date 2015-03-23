@@ -28,7 +28,7 @@ class Lexer:
 
     def isOperator(self, string):
         """Checks if the character provided is a operator"""
-        return ["+", "-", "*", "/", "^", "%", "=", ">", "<", ">=", "<=", "?", "!", "-", "#"].__contains__(string)
+        return ["+", "-", "*", "/", "^", "%", "=", ">", "<", ">=", "<=", "?", "!", "-", "#", ":", ";"].__contains__(string)
 
     def parseToken(self, buf):
         """Loops through a buffer and returns the first token"""
@@ -58,7 +58,7 @@ class Lexer:
             elif self.state == State.string:
                 if c == '"':
                     return tokens.string.String(currentToken)
-                elif c.isalnum() or c.isspace():
+                elif c.isalnum() or c.isspace() or self.isOperator(c):
                     currentToken += c
 
             # Parses a symbol or number
@@ -92,7 +92,7 @@ class Lexer:
 
     def createSyntaxTree(self, data):
         """Takes a parsed buffer and returns a syntax tree where parens are replaced with lists containing the items between them"""
-        tree = []
+        tree = tokens.lst.Lst()
         i = 0
         while i < len(data):
             if isinstance(data[i], tokens.lst.ListStart):
