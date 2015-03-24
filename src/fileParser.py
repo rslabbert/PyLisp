@@ -1,6 +1,6 @@
 from env import Env
 from interpreter.read import READ
-from interpreter.evaluate import EVAL
+from interpreter.virtualmachine import VirtualMachine
 
 
 class FileParser():
@@ -9,6 +9,7 @@ class FileParser():
         self.env = Env()
         self.env.setToStandardEnv()
         self.toRead = toRead
+        self.vm = VirtualMachine(self.env)
 
     def parseFile(self):
         buffers = []
@@ -36,7 +37,7 @@ class FileParser():
 
     def run(self):
         for i in self.parseFile():
-            EVAL(READ(i), self.env)
+            self.vm.EVAL(READ(i))
 
 
 if __name__ == '__main__':

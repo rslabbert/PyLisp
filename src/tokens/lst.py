@@ -14,6 +14,6 @@ class ListEnd(Token):
 
 
 class Lst(Token, list):
-    def __init__(self):
+    def __init__(self, *secList):
         Token.__init__(self)
-        list.__init__(self)
+        list.__init__(self, secList)

@@ -8,6 +8,7 @@ class Env(dict):
     def setToStandardEnv(self):
         """Sets the standard environment which contains all the default and language specific symbols"""
         import operator as op
+        import tokens
         self.update({
             "+": op.add,
             "-": op.sub,
@@ -18,20 +19,35 @@ class Env(dict):
             "<": op.lt,
             ">=": op.ge,
             "<=": op.le,
+            "max": max,
+            "min": min,
+            "abs": abs,
+            "modulo": op.mod,
             "not": op.not_,
             "and": op.and_,
             "or": op.or_,
+            "nil": tokens.nil.Nil,
+            "boolean?": lambda x: True if x is True else False,
+            "symbol?": lambda x: True if isinstance(x, tokens.symbol.Symbol) else False,
             "#t": True,
             "#f": False})
 
-    def set(self, key, val):
+    def set(self, keys, vals):
         """Convenience function for self.update with a single value which returns the value inserted"""
-        self.update({key: val})
-        return val
+        if isinstance(keys, list):
+            for i, k in enumerate(keys):
+                self.update({k: vals[i]})
+                return
+        else:
+            self.update({keys: vals})
+            return vals
 
-    def get(self, key):
+    def get(self, key, default=None):
         """Convenience function for self[key] which return the value if found, else raises an error which tells the user the symbol was not found"""
         try:
             return self[key]
         except:
-            print("Symbol", key, "not found")
+            if default:
+                return default
+            else:
+                print("Symbol", key, "not found")

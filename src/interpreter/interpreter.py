@@ -4,6 +4,7 @@ from os import environ
 
 from env import Env
 from core import coreKeywords
+from interpreter.virtualmachine import VirtualMachine
 from interpreter.rep import rep
 
 
@@ -20,6 +21,8 @@ class Interpreter():
         self.replEnv = Env()
         self.replEnv.setToStandardEnv()
 
+        self.vm = VirtualMachine(self.replEnv)
+
         readline.set_completer(self.complete)
         readline.parse_and_bind('tab: complete')
         readline.parse_and_bind('set blink-matching-paren on')
@@ -33,7 +36,7 @@ class Interpreter():
         self.completionCandidates = []
 
     def run(self, line):
-        rep(line, self.replEnv)
+        rep(line, self.vm)
 
     def complete(self, text, state):
         if state == 0:
