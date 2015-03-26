@@ -16,4 +16,21 @@ class ListEnd(Token):
 class Lst(Token, list):
     def __init__(self, *secList):
         Token.__init__(self)
-        list.__init__(self, secList)
+        list.__init__(self)
+        self.extend(secList)
+
+    def head(self):
+        return self[0]
+
+    def tail(self):
+        return self[1:]
+
+    def __getitem__(self, item):
+            result = list.__getitem__(self, item)
+            try:
+                if isinstance(result, list):
+                    return Lst(*result)
+                else:
+                    return result
+            except TypeError:
+                return result

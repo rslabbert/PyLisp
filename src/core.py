@@ -2,7 +2,7 @@ import tokens
 from env import Env
 
 
-coreKeywords = ["define", "lambda", "let", "do", "if", "set!", "display"]
+coreKeywords = ["define", "lambda", "let", "do", "if", "set", "display"]
 
 
 def do_define(expr1, expr2, EVAL, env):

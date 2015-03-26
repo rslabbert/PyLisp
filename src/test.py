@@ -1,5 +1,5 @@
 from env import Env
-from interpreter.evaluate import VirtualMachine
+from virtualmachine import VirtualMachine
 from interpreter.read import READ
 from interpreter.printer import PRINT
 
@@ -23,7 +23,10 @@ def main():
                 "(f 2)",
                 "((lambda (x) (+ x x)) 2)",
                 "(define fac (lambda (n) (if (= n 1) n (* n (fac (- n 1))))))",
-                "(fac 5)"]
+                "(fac 5)",
+                "(let ((x 2) (y 2)) (+ x y))"]
+
+    # testList =
 
     offset = 0
     for inp in testList[offset:]:

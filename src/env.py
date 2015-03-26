@@ -26,7 +26,7 @@ class Env(dict):
             "not": op.not_,
             "and": op.and_,
             "or": op.or_,
-            "nil": tokens.nil.Nil,
+            "nil": None,
             "boolean?": lambda x: True if x is True else False,
             "symbol?": lambda x: True if isinstance(x, tokens.symbol.Symbol) else False,
             "#t": True,
@@ -37,7 +37,7 @@ class Env(dict):
         if isinstance(keys, list):
             for i, k in enumerate(keys):
                 self.update({k: vals[i]})
-                return
+            return
         else:
             self.update({keys: vals})
             return vals

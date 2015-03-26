@@ -4,7 +4,7 @@ from os import environ
 
 from env import Env
 from core import coreKeywords
-from interpreter.virtualmachine import VirtualMachine
+from virtualmachine import VirtualMachine
 from interpreter.rep import rep
 
 
