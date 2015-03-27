@@ -1,0 +1,10 @@
+; Test defining list
+(list (1 2 3))
+(list ("a" "b" "c"))
+
+; Test using lists as arguments
+(define r (list (1 2)))
+(display (= 3(+ r)))
+
+; Test composing lists of expressions
+(list ((+ 1 2) (+ 2 3) (+ 4 5)))

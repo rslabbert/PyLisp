@@ -2,7 +2,7 @@ import tokens
 from tokens.lst import Lst
 from enum import Enum
 
-coreKeywords = ["define", "lambda", "let", "do", "if", "set", "display"]
+coreKeywords = ["define", "begin", "lambda", "let", "do", "if", "set", "display", "list"]
 
 
 class ContinuationType(Enum):
@@ -45,7 +45,7 @@ class VirtualMachine():
         self.expr = self.env = self.continuation = self.vals = self.func = self.args = self.counter = self.ls = registers
 
     def evalValue(self):
-        if not isinstance(self.expr, tokens.symbol.Symbol) and not isinstance(self.expr, tokens.number.Number) and not isinstance(self.expr, Lst):
+        if not isinstance(self.expr, tokens.symbol.Symbol) and not isinstance(self.expr, tokens.number.Number) and not isinstance(self.expr, Lst) and not isinstance(self.expr, tokens.string.String):
             self.vals = self.expr
             self.counter = self.evalKeys
             return
@@ -63,6 +63,10 @@ class VirtualMachine():
                 self.vals = int(self.expr.value)
             except ValueError:
                 self.vals = float(self.expr.value)
+            self.counter = self.evalKeys
+            return
+        elif isinstance(self.expr, tokens.string.String):
+            self.vals = str(self.expr.value)
             self.counter = self.evalKeys
             return
         elif isinstance(self.expr, Lst):
@@ -116,10 +120,15 @@ class VirtualMachine():
                     self.counter = self.evalValue
                     return
                 elif sym == "define" or sym == "set":
-                    name = self.expr[1]
-                    self.expr = self.expr[2]
+                    if len(self.expr) == 3:
+                        name = self.expr[1].head()
+                        self.vals = tokens.function.Function(self.expr[1].tail(), self.expr[2], self.env)
+                        self.counter = self.evalKeys
+                    else:
+                        name = self.expr[1]
+                        self.expr = self.expr[2]
+                        self.counter = self.evalValue
                     self.continuation = Continuation(ContinuationType.cSet, name, self.env, self.continuation)
-                    self.counter = self.evalValue
                     return
                 elif sym == "display":
                     self.continuation = Continuation(ContinuationType.cProcFunc, self.expr.tail(), self.env, self.continuation)
@@ -127,10 +136,10 @@ class VirtualMachine():
                     return
                 elif sym == "list":
                     if isinstance(self.expr[1], Lst):
-                        self.vals = Lst(*self.expr[1])
+                        self.ls = Lst(*self.expr[1])
                     else:
-                        self.vals = Lst(self.expr[1])
-                    self.counter = self.evalKeys
+                        self.ls = Lst(self.expr[1])
+                    self.counter = self.evalMapValue
                     return
             elif len(self.expr) == 1 and (isinstance(self.expr.head(), tokens.symbol.Symbol) or isinstance(self.expr.head(), tokens.number.Number)):
                 self.expr = self.expr.head()
@@ -163,7 +172,7 @@ class VirtualMachine():
             return
         elif k == ContinuationType.cBegin:
             results = self.vals
-            k = self.continuation.head()
+            k = self.continuation[1]
             self.continuation = k
             self.vals = results[-1]
             self.counter = self.evalKeys
@@ -251,7 +260,7 @@ class VirtualMachine():
             if not hasattr(second, '__len__'):
                 self.vals = Lst(first, second)
             elif len(second) > 0:
-                self.vals = Lst(first, second)
+                self.vals = Lst(first, *second)
             else:
                 self.vals = first
             self.counter = self.evalKeys
