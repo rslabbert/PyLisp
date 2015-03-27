@@ -49,7 +49,6 @@ class FileParser():
 
     def run(self):
         for i, k in self.parseFile():
-            print(k, i)
             self.vm.EVAL(READ(i))
 
 
