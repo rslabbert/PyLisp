@@ -1,7 +1,8 @@
 import tokens
 from tokens.lst import Lst
-import core
 from enum import Enum
+
+coreKeywords = ["define", "lambda", "let", "do", "if", "set", "display"]
 
 
 class ContinuationType(Enum):
@@ -51,7 +52,7 @@ class VirtualMachine():
         elif isinstance(self.expr, tokens.symbol.Symbol):
             val = self.env.get(self.expr.value)
             if val is None:
-                if val not in core.coreKeywords:
+                if val not in coreKeywords:
                     self.counter = None
                     return
             self.vals = val
@@ -65,13 +66,16 @@ class VirtualMachine():
             self.counter = self.evalKeys
             return
         elif isinstance(self.expr, Lst):
-            if isinstance(self.expr.head(), tokens.symbol.Symbol) and self.expr.head().value in core.coreKeywords and self.env.get(self.expr.head().value, "notShadowed") == "notShadowed":
+            if isinstance(self.expr.head(), tokens.symbol.Symbol) and self.expr.head().value in coreKeywords and self.env.get(self.expr.head().value, "notShadowed") == "notShadowed":
                 sym = self.expr.head().value
                 if sym == "lambda":
                     args = self.expr[1]
                     body = self.expr[2]
 
-                    self.vals = core.do_lambda(args, body, self.env)
+                    if body is None:
+                        self.vals = tokens.function.Function([], args, self.env)
+                    self.vals = tokens.function.Function(args, body, self.env)
+
                     self.counter = self.evalKeys
                     return
                 elif sym == "let":
