@@ -3,9 +3,9 @@ import sys
 from os import environ
 
 from env import Env
-from core import coreKeywords
-from virtualmachine import VirtualMachine
+from virtualmachine import VirtualMachine, coreKeywords
 from interpreter.rep import rep
+from errors.pylisperror import PylispError
 
 
 class Interpreter():
@@ -22,6 +22,7 @@ class Interpreter():
         self.replEnv.setToStandardEnv()
 
         self.vm = VirtualMachine(self.replEnv)
+        self.registers = None
 
         readline.set_completer(self.complete)
         readline.parse_and_bind('tab: complete')
@@ -64,10 +65,14 @@ class Interpreter():
         return ret
 
     def cmdloop(self):
+        self.registers = self.vm.getRegisters()
         while True:
             try:
                 inp = input(self.prompt)
                 inp = self.precmd(inp)
+                self.run(inp)
+            except PylispError as e:
+                print(e)
             except EOFError:
                 print("Bye")
                 self.cleanUp()
@@ -76,10 +81,10 @@ class Interpreter():
                 print("Unexpected error:", sys.exc_info()[0])
                 self.cleanUp()
                 return
-            self.run(inp)
 
     def cleanUp(self):
         readline.write_history_file(self.histfile)
+        self.vm.setRegisters(self.registers)
 
 
 class SubShell(Interpreter):

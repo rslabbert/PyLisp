@@ -6,6 +6,7 @@ import tokens.symbol
 import tokens.nil
 import tokens.number
 import tokens.string
+from errors import syntaxerror
 
 
 class State(Enum):
@@ -112,6 +113,10 @@ class Lexer:
 
     def parseBuffer(self, buf):
         """Applies the parseToken function until the entire buffer is parsed, at which point it returns a syntax tree"""
+
+        if not buf.count("(") == buf.count(")"):
+            raise syntaxerror.PylispSyntaxError(buf, "Opening brackets do not match closing brackets")
+
         self.position = 0
         self.state = None
         self.data = []
@@ -135,14 +140,3 @@ class Lexer:
             else:
                 print(i.value, end=" ")
         print()
-
-if __name__ == '__main__':
-    # TODO do proper testing
-    lexer = Lexer()
-    from pprint import pprint
-    # print(lexer.parseToken('Test') == Token(State.symbol, 'Test'))
-    # print(lexer.parseToken('"Test"') == Token(State.string, 'Test'))
-    # print(lexer.parseToken('"Test more"') == Token(State.string, 'Test more'))
-    # print(lexer.parseBuffer('test more "stuff"') == [Token(State.symbol, 'test'), Token(State.symbol, 'more'), Token(State.string, 'stuff')])
-    # print(lexer.parseBuffer('(+ (1 + (3 5)))') == [[Token(State.operator, '+'), [Token(State.num, '1'), Token(State.operator, '+'), [Token(State.num, '3'), Token(State.num, '5')]]]])
-    pprint(lexer.parseBuffer('(+ (+ 1 2) (+ 1 2))'))

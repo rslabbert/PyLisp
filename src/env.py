@@ -56,4 +56,4 @@ class Env(dict):
             if default:
                 return default
             else:
-                print("Symbol", key, "not found")
+                return None

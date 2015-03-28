@@ -1,27 +1,10 @@
 import tokens
+from errors.symbolnotfound import SymbolNotFound
+from errors.syntaxerror import PylispSyntaxError
 from tokens.lst import Lst
-from enum import Enum
+from continuation import Continuation, ContinuationType
 
 coreKeywords = ["define", "begin", "lambda", "let", "do", "if", "set", "list"]
-
-
-class ContinuationType(Enum):
-    cEmpty = 0
-    cLet = 1
-    cBegin = 2
-    cIf = 3
-    cSet = 4
-    cProcKeys = 5
-    cProcVals = 6
-    cProcFunc = 7
-    cProcArgs = 8
-    cMapValueOfCons = 9
-    cMapValueOfStep = 10
-
-
-class Continuation(Lst):
-    def __init__(self, *secList):
-        Lst.__init__(self, *secList)
 
 
 class VirtualMachine():
@@ -41,8 +24,15 @@ class VirtualMachine():
             self.counter,
             self.ls]
 
-    def setRegisters(self, *registers):
-        self.expr = self.env = self.continuation = self.vals = self.func = self.args = self.counter = self.ls = registers
+    def setRegisters(self, registers):
+        self.expr = registers[0]
+        self.env = registers[1]
+        self.continuation = registers[2]
+        self.vals = registers[3]
+        self.func = registers[4]
+        self.args = registers[5]
+        self.counter = registers[6]
+        self.ls = registers[7]
 
     def evalValue(self):
         if not isinstance(self.expr, tokens.symbol.Symbol) and not isinstance(self.expr, tokens.number.Number) and not isinstance(self.expr, Lst) and not isinstance(self.expr, tokens.string.String):
@@ -53,6 +43,7 @@ class VirtualMachine():
             val = self.env.get(self.expr.value)
             if val is None:
                 if val not in coreKeywords:
+                    raise SymbolNotFound(self.expr.value)
                     self.counter = None
                     return
 
@@ -74,6 +65,10 @@ class VirtualMachine():
             if isinstance(self.expr.head(), tokens.symbol.Symbol) and self.expr.head().value in coreKeywords and self.env.get(self.expr.head().value, "notShadowed") == "notShadowed":
                 sym = self.expr.head().value
                 if sym == "lambda":
+                    if len(self.expr) > 3:
+                        raise PylispSyntaxError("lambda", "More than two expressions")
+                    elif len(self.expr) < 3:
+                        raise PylispSyntaxError("lambda", "Less than two expressions")
                     args = self.expr[1]
                     body = self.expr[2]
 
@@ -84,6 +79,8 @@ class VirtualMachine():
                     self.counter = self.evalKeys
                     return
                 elif sym == "let":
+                    if len(self.expr) < 3:
+                        raise PylispSyntaxError("let", "Less than two expressions")
                     bindings = self.expr[1]
                     body = self.expr[2]
 
@@ -110,11 +107,17 @@ class VirtualMachine():
                     self.counter = self.evalMapValue
                     return
                 elif sym == "if":
+                    if len(self.expr) > 4:
+                        raise PylispSyntaxError("if", "Too many expressions, only condition, true and false allowed")
+                    elif len(self.expr) < 3:
+                        raise PylispSyntaxError("if", "No true or false responses")
                     self.continuation = Continuation(ContinuationType.cIf, self.expr[2], self.expr[3], self.env, self.continuation)
                     self.expr = self.expr[1]
                     self.counter = self.evalValue
                     return
                 elif sym == "define" or sym == "set":
+                    if not len(self.expr) == 3:
+                        raise PylispSyntaxError(sym, "Too many expressions, only name and value allowed")
                     if isinstance(self.expr[1], Lst):
                         name = self.expr[1].head()
                         self.vals = tokens.function.Function(self.expr[1].tail(), self.expr[2], self.env)
@@ -291,17 +294,10 @@ class VirtualMachine():
                 self.vals = self.func(*self.args)
 
     def EVAL(self, expr):
-        register = self.getRegisters()
         self.expr = expr
         self.continuation = Continuation(ContinuationType.cEmpty)
         self.counter = self.evalValue
         self.returnVal = None
-        try:
-            while self.counter is not None:
-                self.counter()
-        except Exception:
-            import sys
-            import traceback
-            traceback.print_exc(file=sys.stdout)
-            self.setRegisters(register)
+        while self.counter is not None:
+            self.counter()
         return self.returnVal
