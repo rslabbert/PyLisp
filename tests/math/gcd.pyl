@@ -1,0 +1,9 @@
+(define (gcd x y)
+    (let ((n (max x y))
+          (m (min x y)))
+    (if (= 0 (modulo n m))
+      (/ n m)
+      (gcd m (modulo n m)))))
+
+(display (= 2 (gcd 12 6)))
+(newline)

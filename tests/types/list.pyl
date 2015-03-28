@@ -5,6 +5,7 @@
 ; Test using lists as arguments
 (define r (list (1 2)))
 (display (= 3(+ r)))
+(newline)
 
 ; Test composing lists of expressions
 (list ((+ 1 2) (+ 2 3) (+ 4 5)))

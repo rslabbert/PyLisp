@@ -1,3 +1,9 @@
+from functools import partial
+import operator as op
+
+import tokens
+
+
 class Env(dict):
     """The environment which is used to find variables and symbols and their associated value"""
     def __init__(self, secEnv={}):
@@ -7,8 +13,6 @@ class Env(dict):
 
     def setToStandardEnv(self):
         """Sets the standard environment which contains all the default and language specific symbols"""
-        import operator as op
-        import tokens
         self.update({
             "+": op.add,
             "-": op.sub,
@@ -30,7 +34,9 @@ class Env(dict):
             "boolean?": lambda x: True if x is True else False,
             "symbol?": lambda x: True if isinstance(x, tokens.symbol.Symbol) else False,
             "#t": True,
-            "#f": False})
+            "#f": False,
+            "newline": partial(print, ""),
+            "display": partial(print, end="")})
 
     def set(self, keys, vals):
         """Convenience function for self.update with a single value which returns the value inserted"""
