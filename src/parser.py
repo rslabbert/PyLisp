@@ -20,7 +20,7 @@ class State(Enum):
     listEnd = 6
 
 
-class Lexer:
+class Parser:
     """Class responsible for parsing user input"""
     def __init__(self):
         self.state = State.nil

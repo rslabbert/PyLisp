@@ -1,6 +1,7 @@
 from env import Env
 from interpreter.read import READ
 from virtualmachine import VirtualMachine
+from errors.pylisperror import PylispError
 
 
 class FileParser():
@@ -49,8 +50,11 @@ class FileParser():
 
     def run(self):
         for i, k in self.parseFile():
-            self.vm.EVAL(READ(i))
-
+            try:
+                self.vm.EVAL(READ(i))
+            except PylispError as e:
+                print(e, "at line", k)
+                return
 
 if __name__ == '__main__':
     parser = FileParser("tests/simpleFile.pyl")
