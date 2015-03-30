@@ -15,6 +15,8 @@ class ContinuationType(Enum):
     cProcArgs = 8
     cMapValueOfCons = 9
     cMapValueOfStep = 10
+    cLibrary = 11
+    cImport = 12
 
 
 class Continuation(Lst):

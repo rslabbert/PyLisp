@@ -3,14 +3,15 @@ from errors.symbolnotfound import SymbolNotFound
 from errors.syntaxerror import PylispSyntaxError
 from tokens.lst import Lst
 from continuation import Continuation, ContinuationType
+from env import Env
 
-coreKeywords = ["define", "begin", "lambda", "let", "do", "if", "set", "list"]
+coreKeywords = ["define", "begin", "lambda", "let", "do", "if", "set", "list", "library", "import", "export"]
 
 
 class VirtualMachine():
     """Docstring for Evaluator. """
     def __init__(self, env):
-        self.expr = self.continuation = self.vals = self.func = self.args = self.counter = self.ls = self.returnVal = None
+        self.expr = self.continuation = self.vals = self.func = self.args = self.counter = self.ls = self.returnVal = self.export = None
         self.env = env
 
     def getRegisters(self):
@@ -22,7 +23,8 @@ class VirtualMachine():
             self.func,
             self.args,
             self.counter,
-            self.ls]
+            self.ls,
+            self.export]
 
     def setRegisters(self, registers):
         self.expr = registers[0]
@@ -33,6 +35,7 @@ class VirtualMachine():
         self.args = registers[5]
         self.counter = registers[6]
         self.ls = registers[7]
+        self.expor = registers[8]
 
     def evalValue(self):
         if not isinstance(self.expr, tokens.symbol.Symbol) and not isinstance(self.expr, tokens.number.Number) and not isinstance(self.expr, Lst) and not isinstance(self.expr, tokens.string.String):
@@ -135,8 +138,26 @@ class VirtualMachine():
                         self.ls = Lst(self.expr[1])
                     self.counter = self.evalMapValue
                     return
-            # elif len(self.expr) == 1 and (isinstance(self.expr.head(), tokens.symbol.Symbol) or isinstance(self.expr.head(), tokens.number.Number)):
-                # self.expr = self.expr.head()
+                elif sym == "library":
+                    name = self.expr[1][0].value
+                    self.expr = self.expr[2:]
+
+                    self.continuation = Continuation(ContinuationType.cLibrary, name, self.env, self.continuation)
+                    self.counter = self.evalValue
+                    return
+                elif sym == "import":
+                    name = self.expr[1].value
+                    self.continuation = Continuation(ContinuationType.cImport, name, self.env, self.continuation)
+                    self.expr = None
+                    self.counter = self.evalKeys
+                    return
+                elif sym == "export":
+                    if not self.export:
+                        self.export = [self.expr[1].value]
+                    else:
+                        self.export.append(self.expr[1].value)
+                    self.counter = self.evalKeys
+                    return
             else:
                 self.continuation = Continuation(ContinuationType.cProcFunc, self.expr.tail(), self.env, self.continuation)
                 self.expr = self.expr.head()
@@ -168,7 +189,7 @@ class VirtualMachine():
             results = self.vals
             k = self.continuation[1]
             self.continuation = k
-            self.vals = results[-1]
+            self.vals = results[-1] if self.vals is not None else None
             self.counter = self.evalKeys
             return
         elif k == ContinuationType.cIf:
@@ -258,6 +279,33 @@ class VirtualMachine():
             else:
                 self.vals = first
             self.counter = self.evalKeys
+            return
+        elif k == ContinuationType.cLibrary:
+            name = self.continuation[1]
+            env = self.continuation[2]
+            k = self.continuation[3]
+            self.continuation = k
+
+            libEnv = Env()
+            for i in self.export:
+                libEnv.set(i, self.env[i])
+                del self.env[i]
+
+            env.set(name, libEnv)
+            self.env = env
+            self.counter = self.evalValue
+            return
+        elif k == ContinuationType.cImport:
+            name = self.continuation[1]
+            env = self.continuation[2]
+            k = self.continuation[3]
+            self.continuation = k
+
+            libEnv = env.get(name)
+            env.update(libEnv)
+
+            self.env = env
+            self.counter = self.evalValue
             return
 
     def evalMapValue(self):

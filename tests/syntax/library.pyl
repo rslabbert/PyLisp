@@ -1,0 +1,27 @@
+(library (hello)
+         (export hello-world)
+         (define hello-world "Hello World!"))
+
+(import hello)
+(display hello-world)
+(newline)
+
+(library (math)
+         (export gcd)
+         (export fac)
+
+         (define (gcd x y)
+           (let ((n (max x y))
+                 (m (min x y)))
+             (if (= 0 (modulo n m))
+               (/ n m)
+               (gcd m (modulo n m)))))
+
+         (define (fac n) (if (= n 0) 1 (* n (fac (- n 1))))))
+
+(import math)
+
+(display (fac 5))
+(newline)
+(display (gcd 12 6))
+(newline)
