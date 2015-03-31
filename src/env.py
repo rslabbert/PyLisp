@@ -1,7 +1,4 @@
-from functools import partial
-import operator as op
-
-import tokens
+from core import libs
 
 
 class Env(dict):
@@ -13,30 +10,15 @@ class Env(dict):
 
     def setToStandardEnv(self):
         """Sets the standard environment which contains all the default and language specific symbols"""
-        self.update({
-            "+": op.add,
-            "-": op.sub,
-            "*": op.mul,
-            "/": op.truediv,
-            "=": op.eq,
-            ">": op.gt,
-            "<": op.lt,
-            ">=": op.ge,
-            "<=": op.le,
-            "max": max,
-            "min": min,
-            "abs": abs,
-            "modulo": op.mod,
-            "not": op.not_,
-            "and": op.and_,
-            "or": op.or_,
-            "nil": None,
-            "boolean?": lambda x: True if x is True else False,
-            "symbol?": lambda x: True if isinstance(x, tokens.symbol.Symbol) else False,
-            "#t": True,
-            "#f": False,
-            "newline": partial(print, ""),
-            "display": partial(print, end="")})
+        self.includeStandardLib("arithmetic")
+        self.includeStandardLib("condition")
+
+    def includeStandardLib(self, lib):
+        val = libs.libs[lib]
+        if val is not None:
+            self.update(val)
+        else:
+            return False
 
     def set(self, keys, vals):
         """Convenience function for self.update with a single value which returns the value inserted"""
@@ -56,4 +38,4 @@ class Env(dict):
             if default:
                 return default
             else:
-                return None
+                return False

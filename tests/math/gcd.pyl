@@ -1,9 +1,12 @@
+(import io)
+(import math)
+
 (define (gcd x y)
-    (let ((n (max x y))
-          (m (min x y)))
+  (let ((n (max x y))
+        (m (min x y)))
     (if (= 0 (modulo n m))
-      (/ n m)
+      m
       (gcd m (modulo n m)))))
 
-(display (= 2 (gcd 12 6)))
+(display (= 6 (gcd 12 6)))
 (newline)

@@ -1,3 +1,5 @@
+(import io)
+
 ; Test setting an already declared variable
 (define r 10)
 (display (= 10 r))

@@ -1,3 +1,5 @@
+(import io)
+
 ; Test defining and manipulating variables
 (define r 10)
 (display (= 10 r))

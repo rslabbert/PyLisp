@@ -1,8 +1,7 @@
 # PyLisp
 
 ## TODO
-* ~~Implement error handling in the virtual machine for various errors~~
-* Make `(display)` not have a seperator between arguments
+* Make sure begin, let, etc. have their own environments
 * Write more tests
 * Implement almost the entire scheme standard
 * Start work on a standard library

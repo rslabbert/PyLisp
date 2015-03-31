@@ -1,15 +1,19 @@
 import tokens
 from errors.symbolnotfound import SymbolNotFound
 from errors.syntaxerror import PylispSyntaxError
+from errors.librarynotfound import LibraryNotFound
 from tokens.lst import Lst
 from continuation import Continuation, ContinuationType
 from env import Env
 
-coreKeywords = ["define", "begin", "lambda", "let", "do", "if", "set", "list", "library", "import", "export"]
+coreKeywords = ["define", "begin", "lambda", "let", "do",
+                "if", "set", "list", "library", "import", "export"]
 
 
 class VirtualMachine():
+
     """Docstring for Evaluator. """
+
     def __init__(self, env):
         self.expr = self.continuation = self.vals = self.func = self.args = self.counter = self.ls = self.returnVal = self.export = None
         self.env = env
@@ -35,7 +39,7 @@ class VirtualMachine():
         self.args = registers[5]
         self.counter = registers[6]
         self.ls = registers[7]
-        self.expor = registers[8]
+        self.export = registers[8]
 
     def evalValue(self):
         if not isinstance(self.expr, tokens.symbol.Symbol) and not isinstance(self.expr, tokens.number.Number) and not isinstance(self.expr, Lst) and not isinstance(self.expr, tokens.string.String):
@@ -44,7 +48,7 @@ class VirtualMachine():
             return
         elif isinstance(self.expr, tokens.symbol.Symbol):
             val = self.env.get(self.expr.value)
-            if val is None:
+            if val is False:
                 if val not in coreKeywords:
                     raise SymbolNotFound(self.expr.value)
                     self.counter = None
@@ -69,21 +73,25 @@ class VirtualMachine():
                 sym = self.expr.head().value
                 if sym == "lambda":
                     if len(self.expr) > 3:
-                        raise PylispSyntaxError("lambda", "More than two expressions")
+                        raise PylispSyntaxError(
+                            "lambda", "More than two expressions")
                     elif len(self.expr) < 3:
-                        raise PylispSyntaxError("lambda", "Less than two expressions")
+                        raise PylispSyntaxError(
+                            "lambda", "Less than two expressions")
                     args = self.expr[1]
                     body = self.expr[2]
 
                     if body is None:
-                        self.vals = tokens.function.Function([], args, self.env)
+                        self.vals = tokens.function.Function(
+                            [], args, self.env)
                     self.vals = tokens.function.Function(args, body, self.env)
 
                     self.counter = self.evalKeys
                     return
                 elif sym == "let":
                     if len(self.expr) < 3:
-                        raise PylispSyntaxError("let", "Less than two expressions")
+                        raise PylispSyntaxError(
+                            "let", "Less than two expressions")
                     bindings = self.expr[1]
                     body = self.expr[2]
 
@@ -96,7 +104,8 @@ class VirtualMachine():
                     bindRight = Lst(*[x.tail() for x in bindCursor])
 
                     self.ls = bindRight
-                    self.continuation = Continuation(ContinuationType.cLet, body, bindLeft, self.env, self.continuation)
+                    self.continuation = Continuation(
+                        ContinuationType.cLet, body, bindLeft, self.env, self.continuation)
                     self.counter = self.evalMapValue
                     return
                 elif sym == "begin":
@@ -106,30 +115,37 @@ class VirtualMachine():
                         return
 
                     self.ls = self.expr.tail()
-                    self.continuation = Continuation(ContinuationType.cBegin, self.continuation)
+                    self.continuation = Continuation(
+                        ContinuationType.cBegin, self.env, self.continuation)
                     self.counter = self.evalMapValue
                     return
                 elif sym == "if":
                     if len(self.expr) > 4:
-                        raise PylispSyntaxError("if", "Too many expressions, only condition, true and false allowed")
+                        raise PylispSyntaxError(
+                            "if", "Too many expressions, only condition, true and false allowed")
                     elif len(self.expr) < 3:
-                        raise PylispSyntaxError("if", "No true or false responses")
-                    self.continuation = Continuation(ContinuationType.cIf, self.expr[2], self.expr[3], self.env, self.continuation)
+                        raise PylispSyntaxError(
+                            "if", "No true or false responses")
+                    self.continuation = Continuation(
+                        ContinuationType.cIf, self.expr[2], self.expr[3], self.env, self.continuation)
                     self.expr = self.expr[1]
                     self.counter = self.evalValue
                     return
                 elif sym == "define" or sym == "set":
                     if not len(self.expr) == 3:
-                        raise PylispSyntaxError(sym, "Too many expressions, only name and value allowed")
+                        raise PylispSyntaxError(
+                            sym, "Too many expressions, only name and value allowed")
                     if isinstance(self.expr[1], Lst):
                         name = self.expr[1].head()
-                        self.vals = tokens.function.Function(self.expr[1].tail(), self.expr[2], self.env)
+                        self.vals = tokens.function.Function(
+                            self.expr[1].tail(), self.expr[2], self.env)
                         self.counter = self.evalKeys
                     else:
                         name = self.expr[1]
                         self.expr = self.expr[2]
                         self.counter = self.evalValue
-                    self.continuation = Continuation(ContinuationType.cSet, name, self.env, self.continuation)
+                    self.continuation = Continuation(
+                        ContinuationType.cSet, name, self.env, self.continuation)
                     return
                 elif sym == "list":
                     if isinstance(self.expr[1], Lst):
@@ -142,12 +158,14 @@ class VirtualMachine():
                     name = self.expr[1][0].value
                     self.expr = self.expr[2:]
 
-                    self.continuation = Continuation(ContinuationType.cLibrary, name, self.env, self.continuation)
+                    self.continuation = Continuation(
+                        ContinuationType.cLibrary, name, self.env, self.continuation)
                     self.counter = self.evalValue
                     return
                 elif sym == "import":
                     name = self.expr[1].value
-                    self.continuation = Continuation(ContinuationType.cImport, name, self.env, self.continuation)
+                    self.continuation = Continuation(
+                        ContinuationType.cImport, name, self.env, self.continuation)
                     self.expr = None
                     self.counter = self.evalKeys
                     return
@@ -159,7 +177,8 @@ class VirtualMachine():
                     self.counter = self.evalKeys
                     return
             else:
-                self.continuation = Continuation(ContinuationType.cProcFunc, self.expr.tail(), self.env, self.continuation)
+                self.continuation = Continuation(
+                    ContinuationType.cProcFunc, self.expr.tail(), self.env, self.continuation)
                 self.expr = self.expr.head()
                 return
 
@@ -187,7 +206,8 @@ class VirtualMachine():
             return
         elif k == ContinuationType.cBegin:
             results = self.vals
-            k = self.continuation[1]
+            self.env = self.continuation[1]
+            k = self.continuation[2]
             self.continuation = k
             self.vals = results[-1] if self.vals is not None else None
             self.counter = self.evalKeys
@@ -236,7 +256,8 @@ class VirtualMachine():
 
             self.ls = args
             self.env = env
-            self.continuation = Continuation(ContinuationType.cProcArgs, func, k)
+            self.continuation = Continuation(
+                ContinuationType.cProcArgs, func, k)
             self.counter = self.evalMapValue
             return
         elif k == ContinuationType.cProcArgs:
@@ -263,7 +284,8 @@ class VirtualMachine():
 
             self.ls = second
             self.env = env
-            self.continuation = Continuation(ContinuationType.cMapValueOfCons, first, key)
+            self.continuation = Continuation(
+                ContinuationType.cMapValueOfCons, first, key)
             self.counter = self.evalMapValue
             return
         elif k == ContinuationType.cMapValueOfCons:
@@ -272,7 +294,7 @@ class VirtualMachine():
             k = self.continuation[2]
 
             self.continuation = k
-            if not hasattr(second, '__len__'):
+            if not isinstance(second, Lst):
                 self.vals = Lst(first, second)
             elif len(second) > 0:
                 self.vals = Lst(first, *second)
@@ -291,6 +313,8 @@ class VirtualMachine():
                 libEnv.set(i, self.env[i])
                 del self.env[i]
 
+            self.export = None
+
             env.set(name, libEnv)
             self.env = env
             self.counter = self.evalValue
@@ -301,7 +325,16 @@ class VirtualMachine():
             k = self.continuation[3]
             self.continuation = k
 
-            libEnv = env.get(name)
+            libEnv = Env()
+
+            val = env.get(name)
+            if val is False:
+                val = libEnv.includeStandardLib(name)
+                if val is False:
+                    raise LibraryNotFound(name)
+            else:
+                libEnv = val
+
             env.update(libEnv)
 
             self.env = env
@@ -315,7 +348,8 @@ class VirtualMachine():
             return
         else:
             self.expr = self.ls.head()
-            self.continuation = Continuation(ContinuationType.cMapValueOfStep, self.ls.tail(), self.env, self.continuation)
+            self.continuation = Continuation(
+                ContinuationType.cMapValueOfStep, self.ls.tail(), self.env, self.continuation)
             self.counter = self.evalValue
             return
 
@@ -323,7 +357,7 @@ class VirtualMachine():
         if isinstance(self.func, tokens.function.Function):
             self.expr = self.func.expr
 
-            if not hasattr(self.args, '__len__'):
+            if not isinstance(self.args, Lst):
                 self.env = self.func.getEnv(self.env, self.args)
             else:
                 self.env = self.func.getEnv(self.env, *self.args)
@@ -336,7 +370,7 @@ class VirtualMachine():
         else:
             self.counter = self.evalKeys
 
-            if not hasattr(self.args, '__len__'):
+            if not isinstance(self.args, Lst):
                 self.vals = self.func(self.args)
             else:
                 self.vals = self.func(*self.args)

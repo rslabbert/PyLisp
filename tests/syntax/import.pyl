@@ -1,0 +1,6 @@
+(begin 
+  (import math)
+  (import io)
+  (display (sqrt 4)))
+
+(newline)
