@@ -390,16 +390,20 @@ class VirtualMachine():
             self.vals = self.func
             self.counter = self.evalKeys
         elif isinstance(self.func, partial):
+            self.counter = self.evalKeys
+
             if not isinstance(self.args, Lst):
-                if 1 == self.func.__code__.co_argcount:
+                if 1 == self.func.func.__code__.co_argcount - len(self.func.args):
                     self.vals = self.func(self.args)
                 else:
-                    self.vals = partial(self.func, self.args)
+                    self.func.args.append(self.args)
+                    self.vals = self.func
             else:
                 if len(self.args) == self.func.__code__.co_argcount:
                     self.vals = self.func(*self.args)
                 else:
-                    self.vals = partial(self.func, *self.args)
+                    self.func.args.append(*self.args)
+                    self.vals = self.func
         else:
             self.counter = self.evalKeys
 
