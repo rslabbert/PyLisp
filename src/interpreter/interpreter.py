@@ -1,5 +1,4 @@
 import readline
-import sys
 from os import environ
 
 from env import Env
@@ -75,10 +74,6 @@ class Interpreter():
                 print(e)
             except EOFError:
                 print("Bye")
-                self.cleanUp()
-                return
-            except:
-                print("Unexpected error:", sys.exc_info()[0])
                 self.cleanUp()
                 return
 

@@ -1,6 +1,7 @@
 # PyLisp
 
 ## TODO
+* Make auto currying work with builtins by implementing partials in evalprocedure
 * Write more tests
 * Implement almost the entire scheme standard
 * Start work on a standard library

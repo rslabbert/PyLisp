@@ -6,6 +6,7 @@ from tokens.lst import Lst
 from continuation import Continuation, ContinuationType
 from env import Env
 from copy import copy
+from functools import partial
 
 coreKeywords = ["define", "begin", "lambda", "let", "do",
                 "if", "set", "list", "library", "import", "export"]
@@ -205,7 +206,8 @@ class VirtualMachine():
             self.env.set([x.value for x in bindLeft], args)
 
             self.expr = body
-            self.continuation = Continuation(ContinuationType.cResetEnv, copy(env), k)
+            self.continuation = Continuation(
+                ContinuationType.cResetEnv, copy(env), k)
             self.counter = self.evalValue
             return
         elif k == ContinuationType.cBegin:
@@ -213,7 +215,8 @@ class VirtualMachine():
             env = self.continuation[1]
             k = self.continuation[2]
 
-            self.continuation = Continuation(ContinuationType.cResetEnv, copy(env), k)
+            self.continuation = Continuation(
+                ContinuationType.cResetEnv, copy(env), k)
             self.vals = results[-1] if self.vals is not None else None
             self.counter = self.evalKeys
             return
@@ -267,7 +270,7 @@ class VirtualMachine():
             return
         elif k == ContinuationType.cProcArgs:
             args = self.vals
-            func = self.continuation[1]
+            func = copy(self.continuation[1])
             keys = self.continuation[2]
 
             if isinstance(func, Continuation):
@@ -278,7 +281,8 @@ class VirtualMachine():
 
             self.func = func
             self.args = args
-            self.continuation = keys
+            self.continuation = Continuation(
+                ContinuationType.cResetEnv, copy(self.env), keys)
             self.counter = self.evalProcedure
             return
         elif k == ContinuationType.cMapValueOfStep:
@@ -363,22 +367,52 @@ class VirtualMachine():
             self.expr = self.func.expr
 
             if not isinstance(self.args, Lst):
-                self.env = self.func.getEnv(self.env, self.args)
+                if 1 == len(self.func.args):
+                    self.env = self.func.getEnv(self.env, self.args)
+                    self.counter = self.evalValue
+                else:
+                    self.func.env = self.func.getEnv(self.env, self.args)
+                    self.func.args = self.func.args[1:]
+                    self.vals = self.func
+                    self.counter = self.evalKeys
             else:
-                self.env = self.func.getEnv(self.env, *self.args)
+                if len(self.args) == len(self.func.args):
+                    self.env = self.func.getEnv(self.env, *self.args)
+                    self.counter = self.evalValue
+                else:
+                    self.func.env = self.func.getEnv(self.env, *self.args)
+                    self.func.args = self.func.args[len(self.args):]
+                    self.vals = self.func
+                    self.counter = self.evalKeys
 
-            self.counter = self.evalValue
             return
         elif not hasattr(self.func, '__call__'):
             self.vals = self.func
             self.counter = self.evalKeys
+        elif isinstance(self.func, partial):
+            if not isinstance(self.args, Lst):
+                if 1 == self.func.__code__.co_argcount:
+                    self.vals = self.func(self.args)
+                else:
+                    self.vals = partial(self.func, self.args)
+            else:
+                if len(self.args) == self.func.__code__.co_argcount:
+                    self.vals = self.func(*self.args)
+                else:
+                    self.vals = partial(self.func, *self.args)
         else:
             self.counter = self.evalKeys
 
             if not isinstance(self.args, Lst):
-                self.vals = self.func(self.args)
+                if 1 == self.func.__code__.co_argcount:
+                    self.vals = self.func(self.args)
+                else:
+                    self.vals = partial(self.func, self.args)
             else:
-                self.vals = self.func(*self.args)
+                if len(self.args) == self.func.__code__.co_argcount:
+                    self.vals = self.func(*self.args)
+                else:
+                    self.vals = partial(self.func, *self.args)
 
     def EVAL(self, expr):
         self.expr = expr

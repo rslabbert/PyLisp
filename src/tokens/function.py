@@ -1,4 +1,3 @@
-from env import Env
 from tokens.token import Token
 
 
@@ -12,6 +11,6 @@ class Function(Token):
         self.env = env
 
     def getEnv(self, penv, *args):
-        env = Env(penv)
-        env.update(zip(self.args, args))
-        return env
+        self.env.update(penv)
+        self.env.update(zip(self.args, args))
+        return self.env
