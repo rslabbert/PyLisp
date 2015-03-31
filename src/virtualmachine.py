@@ -5,6 +5,7 @@ from errors.librarynotfound import LibraryNotFound
 from tokens.lst import Lst
 from continuation import Continuation, ContinuationType
 from env import Env
+from copy import copy
 
 coreKeywords = ["define", "begin", "lambda", "let", "do",
                 "if", "set", "list", "library", "import", "export"]
@@ -105,7 +106,7 @@ class VirtualMachine():
 
                     self.ls = bindRight
                     self.continuation = Continuation(
-                        ContinuationType.cLet, body, bindLeft, self.env, self.continuation)
+                        ContinuationType.cLet, body, bindLeft, copy(self.env), self.continuation)
                     self.counter = self.evalMapValue
                     return
                 elif sym == "begin":
@@ -116,7 +117,7 @@ class VirtualMachine():
 
                     self.ls = self.expr.tail()
                     self.continuation = Continuation(
-                        ContinuationType.cBegin, self.env, self.continuation)
+                        ContinuationType.cBegin, copy(self.env), self.continuation)
                     self.counter = self.evalMapValue
                     return
                 elif sym == "if":
@@ -190,6 +191,10 @@ class VirtualMachine():
 
             self.counter = None
             return
+        elif k == ContinuationType.cResetEnv:
+            self.env = self.continuation[1]
+            self.continuation = self.continuation[2]
+            return
         elif k == ContinuationType.cLet:
             args = self.vals
             body = self.continuation[1]
@@ -197,18 +202,18 @@ class VirtualMachine():
             env = self.continuation[3]
             k = self.continuation[4]
 
-            env.set([x.value for x in bindLeft], args)
+            self.env.set([x.value for x in bindLeft], args)
 
             self.expr = body
-            self.env = env
-            self.continuation = k
+            self.continuation = Continuation(ContinuationType.cResetEnv, copy(env), k)
             self.counter = self.evalValue
             return
         elif k == ContinuationType.cBegin:
             results = self.vals
-            self.env = self.continuation[1]
+            env = self.continuation[1]
             k = self.continuation[2]
-            self.continuation = k
+
+            self.continuation = Continuation(ContinuationType.cResetEnv, copy(env), k)
             self.vals = results[-1] if self.vals is not None else None
             self.counter = self.evalKeys
             return

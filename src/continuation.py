@@ -17,6 +17,7 @@ class ContinuationType(Enum):
     cMapValueOfStep = 10
     cLibrary = 11
     cImport = 12
+    cResetEnv = 13
 
 
 class Continuation(Lst):
