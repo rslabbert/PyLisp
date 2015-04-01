@@ -10,6 +10,7 @@ from errors import syntaxerror
 
 
 class State(Enum):
+
     """Every type which a token can embody"""
     nil = 0
     comment = 1
@@ -21,7 +22,9 @@ class State(Enum):
 
 
 class Parser:
+
     """Class responsible for parsing user input"""
+
     def __init__(self):
         self.state = State.nil
         self.data = []
@@ -29,7 +32,29 @@ class Parser:
 
     def isOperator(self, string):
         """Checks if the character provided is a operator"""
-        return ["+", "-", "*", "/", "^", "%", "=", ">", "<", ">=", "<=", "?", "!", "-", "#", ":", ";"].__contains__(string)
+        return ["+",
+                "-",
+                "*",
+                "/",
+                "^",
+                "%",
+                "=",
+                ">",
+                "<",
+                ">=",
+                "<=",
+                "?",
+                "!",
+                "-",
+                "#",
+                ":",
+                ";",
+                "$",
+                "&",
+                ".",
+                "@",
+                "_",
+                "~"].__contains__(string)
 
     def parseToken(self, buf):
         """Loops through a buffer and returns the first token"""
@@ -81,7 +106,8 @@ class Parser:
                 else:
                     currentToken += c
 
-        # Handles end of buffer strings not being closed or symbols being at end
+        # Handles end of buffer strings not being closed or symbols being at
+        # end
         if self.state == State.symbol:
             return tokens.symbol.Symbol(currentToken)
         if self.state == State.num:
@@ -115,7 +141,8 @@ class Parser:
         """Applies the parseToken function until the entire buffer is parsed, at which point it returns a syntax tree"""
 
         if not buf.count("(") == buf.count(")"):
-            raise syntaxerror.PylispSyntaxError(buf, "Opening brackets do not match closing brackets")
+            raise syntaxerror.PylispSyntaxError(
+                buf, "Opening brackets do not match closing brackets")
 
         self.position = 0
         self.state = None

@@ -9,7 +9,7 @@ from copy import copy
 from functools import partial
 
 coreKeywords = ["define", "begin", "lambda", "let", "do",
-                "if", "set", "list", "library", "import", "export"]
+                "if", "set!", "list", "library", "import", "export"]
 
 
 class VirtualMachine():
@@ -133,7 +133,7 @@ class VirtualMachine():
                     self.expr = self.expr[1]
                     self.counter = self.evalValue
                     return
-                elif sym == "define" or sym == "set":
+                elif sym == "define" or sym == "set!":
                     if not len(self.expr) == 3:
                         raise PylispSyntaxError(
                             sym, "Too many expressions, only name and value allowed")
@@ -146,8 +146,12 @@ class VirtualMachine():
                         name = self.expr[1]
                         self.expr = self.expr[2]
                         self.counter = self.evalValue
-                    self.continuation = Continuation(
-                        ContinuationType.cSet, name, self.env, self.continuation)
+                    if sym == "define":
+                        self.continuation = Continuation(
+                            ContinuationType.cDefine, name, self.env, self.continuation)
+                    elif sym == "set!":
+                        self.continuation = Continuation(
+                            ContinuationType.cSet, name, self.env, self.continuation)
                     return
                 elif sym == "list":
                     if isinstance(self.expr[1], Lst):
@@ -203,7 +207,8 @@ class VirtualMachine():
             env = self.continuation[3]
             k = self.continuation[4]
 
-            self.env.set([x.value for x in bindLeft], args)
+            self.env.set([x.value for x in bindLeft] if len(
+                bindLeft) > 1 else bindLeft[0].value, args)
 
             self.expr = body
             self.continuation = Continuation(
@@ -244,13 +249,17 @@ class VirtualMachine():
                 self.continuation = k
                 self.counter = self.evalValue
                 return
-        elif k == ContinuationType.cSet:
+        elif k == ContinuationType.cSet or k == ContinuationType.cDefine:
             value = self.vals
             symbol = self.continuation[1]
+
+            if k == ContinuationType.cSet and self.env.get(symbol.value) is False:
+                raise SymbolNotFound(symbol.value)
+
             env = self.continuation[2]
             k = self.continuation[3]
 
-            env.set(symbol.value, value)
+            self.env.set(symbol.value, value)
             self.returnVal = value
             self.continuation = k
             self.vals = None
@@ -376,9 +385,11 @@ class VirtualMachine():
                     self.vals = self.func
                     self.counter = self.evalKeys
             else:
-                if len(self.args) == len(self.func.args):
+                if len(self.args) <= len(self.func.args):
                     self.env = self.func.getEnv(self.env, *self.args)
                     self.counter = self.evalValue
+                elif len(self.args) > len(self.func.args):
+                    raise PylispSyntaxError("function", "Too many arguments")
                 else:
                     self.func.env = self.func.getEnv(self.env, *self.args)
                     self.func.args = self.func.args[len(self.args):]
@@ -399,8 +410,10 @@ class VirtualMachine():
                     self.func.args.append(self.args)
                     self.vals = self.func
             else:
-                if len(self.args) == self.func.__code__.co_argcount:
+                if len(self.args) <= self.func.__code__.co_argcount:
                     self.vals = self.func(*self.args)
+                elif len(self.args) > len(self.func.args):
+                    raise PylispSyntaxError("function", "Too many arguments")
                 else:
                     self.func.args.append(*self.args)
                     self.vals = self.func
@@ -413,8 +426,10 @@ class VirtualMachine():
                 else:
                     self.vals = partial(self.func, self.args)
             else:
-                if len(self.args) == self.func.__code__.co_argcount:
+                if len(self.args) <= self.func.__code__.co_argcount:
                     self.vals = self.func(*self.args)
+                elif len(self.args) > self.func.__code__.co_argcount:
+                    raise PylispSyntaxError("function", "Too many arguments")
                 else:
                     self.vals = partial(self.func, *self.args)
 

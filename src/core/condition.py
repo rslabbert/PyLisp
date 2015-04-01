@@ -1,5 +1,4 @@
 import operator as op
-import tokens
 
 condition = {
     "=": op.eq,
@@ -11,8 +10,6 @@ condition = {
     "and": op.and_,
     "or": op.or_,
     "nil": None,
-    "boolean?": lambda x: True if x is True else False,
-    "symbol?": lambda x: True if isinstance(x, tokens.symbol.Symbol) else False,
     "#t": True,
     "#f": False,
 }

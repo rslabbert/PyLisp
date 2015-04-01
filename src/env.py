@@ -12,6 +12,7 @@ class Env(dict):
         """Sets the standard environment which contains all the default and language specific symbols"""
         self.includeStandardLib("arithmetic")
         self.includeStandardLib("condition")
+        self.includeStandardLib("types")
 
     def includeStandardLib(self, lib):
         val = libs.libs[lib]

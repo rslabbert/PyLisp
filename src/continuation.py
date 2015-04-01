@@ -18,6 +18,7 @@ class ContinuationType(Enum):
     cLibrary = 11
     cImport = 12
     cResetEnv = 13
+    cDefine = 14
 
 
 class Continuation(Lst):
