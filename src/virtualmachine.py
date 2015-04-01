@@ -9,7 +9,7 @@ from copy import copy
 from functools import partial
 
 coreKeywords = ["define", "begin", "lambda", "let", "do",
-                "if", "set!", "list", "library", "import", "export"]
+                "if", "set!", "list", "library", "import", "export", "cond"]
 
 
 class VirtualMachine():
@@ -181,6 +181,16 @@ class VirtualMachine():
                     else:
                         self.export.append(self.expr[1].value)
                     self.counter = self.evalKeys
+                    return
+                elif sym == "cond":
+                    exprs = self.expr[1:]
+                    conds = Lst(*[x.head() for x in exprs])
+                    rets = Lst(*[x.tail() for x in exprs])
+
+                    self.ls = conds
+                    self.continuation = Continuation(
+                        ContinuationType.cCond, rets, self.continuation)
+                    self.counter = self.evalMapValue
                     return
             else:
                 self.continuation = Continuation(
@@ -356,6 +366,21 @@ class VirtualMachine():
             env.update(libEnv)
 
             self.env = env
+            self.counter = self.evalValue
+            return
+        elif k == ContinuationType.cCond:
+            conds = self.vals
+            rets = self.continuation[1]
+            k = self.continuation[2]
+
+            for i, v in enumerate(conds):
+                if v:
+                    self.expr = rets[i]
+                    break
+                else:
+                    self.expr = None
+
+            self.continuation = k
             self.counter = self.evalValue
             return
 

@@ -1,15 +1,16 @@
 import operator as op
 
 condition = {
-    "=": op.eq,
-    ">": op.gt,
-    "<": op.lt,
-    ">=": op.ge,
-    "<=": op.le,
-    "not": op.not_,
-    "and": op.and_,
-    "or": op.or_,
+    "=": lambda x, y: op.eq(x, y),
+    ">": lambda x, y: op.gt(x, y),
+    "<": lambda x, y: op.lt(x, y),
+    ">=": lambda x, y: op.ge(x, y),
+    "<=": lambda x, y: op.le(x, y),
+    "not": lambda x: op.not_(x),
+    "and": lambda x, y: op.and_(x, y),
+    "or": lambda x, y: op.or_(x, y),
     "nil": None,
     "#t": True,
     "#f": False,
+    "else": True,  # Used for cond
 }

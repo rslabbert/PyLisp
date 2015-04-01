@@ -19,6 +19,7 @@ class ContinuationType(Enum):
     cImport = 12
     cResetEnv = 13
     cDefine = 14
+    cCond = 15
 
 
 class Continuation(Lst):
