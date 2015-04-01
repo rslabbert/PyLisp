@@ -1,4 +1,5 @@
 import operator as op
+from tokens.pylSyntax import PylSyntax
 
 condition = {
     "=": lambda x, y: op.eq(x, y),
@@ -12,5 +13,5 @@ condition = {
     "nil": None,
     "#t": True,
     "#f": False,
-    "else": True,  # Used for cond
+    "else": PylSyntax.sElse,  # Used for cond
 }

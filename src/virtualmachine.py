@@ -374,7 +374,7 @@ class VirtualMachine():
             k = self.continuation[2]
 
             for i, v in enumerate(conds):
-                if v:
+                if v is True or v == tokens.pylSyntax.PylSyntax.sElse:
                     self.expr = rets[i]
                     break
                 else:
