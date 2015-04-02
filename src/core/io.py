@@ -1,6 +1,4 @@
-from functools import partial
-
 io = {
-    "newline": partial(print, ""),
-    "display": partial(print, end="", sep="")
+    "newline": lambda: print(""),
+    "display": lambda x: print(x, end="", sep="")
 }

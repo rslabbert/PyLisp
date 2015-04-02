@@ -1,5 +1,5 @@
 (begin 
   (import math)
   (import io)
-  (display = (2 (sqrt 4)))
+  (display (= 2 (sqrt 4)))
   (newline))
