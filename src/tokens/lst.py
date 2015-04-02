@@ -28,7 +28,7 @@ class Lst(Token, list):
     def __getitem__(self, item):
             result = list.__getitem__(self, item)
             try:
-                if isinstance(result, list):
+                if isinstance(result, list) and not isinstance(result, Lst):
                     return Lst(*result)
                 else:
                     return result

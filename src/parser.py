@@ -6,6 +6,7 @@ import tokens.symbol
 import tokens.nil
 import tokens.number
 import tokens.string
+import tokens.literal
 from errors import syntaxerror
 
 
@@ -17,8 +18,7 @@ class State(Enum):
     string = 2
     symbol = 3
     num = 4
-    listStart = 5
-    listEnd = 6
+    literal = 5
 
 
 class Parser:
@@ -67,7 +67,9 @@ class Parser:
 
             # Sets the initial State
             if self.state == State.nil:
-                if c == ";":
+                if c == "'":
+                    return tokens.literal.LiteralStart()
+                elif c == ";":
                     self.state = State.comment
                 elif c == '"':
                     self.state = State.string
@@ -122,20 +124,34 @@ class Parser:
         tree = tokens.lst.Lst()
         i = 0
         while i < len(data):
-            if isinstance(data[i], tokens.lst.ListStart):
+            if isinstance(data[i], tokens.literal.LiteralStart):
+                if isinstance(data[i + 1], tokens.lst.ListStart):
+                    self.state = State.literal
+                    returnVal, j = self.createSyntaxTree(data[i + 2:])
+                    self.state = State.nil
+                    i += j
+                    tree.append(tokens.literal.Literal(returnVal))
+                else:
+                    tree.append(tokens.literal.Literal(data[i].value))
+                    i += 1
+
+            elif isinstance(data[i], tokens.lst.ListStart):
                 returnVal, j = self.createSyntaxTree(data[i + 1:])
                 i += j
                 tree.append(returnVal)
 
             elif isinstance(data[i], tokens.lst.ListEnd):
-                return tree, (i + 1)
+                return tree, i + 1
 
             else:
-                tree.append(data[i])
+                if self.state == State.literal:
+                    tree.append(data[i].value)
+                else:
+                    tree.append(data[i])
 
             i += 1
 
-        return tree if len(tree) > 1 else (tree[0] if len(tree) > 0 else [])
+        return (tree if len(tree) > 1 else (tree[0] if len(tree) > 0 else []), i)
 
     def parseBuffer(self, buf):
         """Applies the parseToken function until the entire buffer is parsed, at which point it returns a syntax tree"""
@@ -155,7 +171,7 @@ class Parser:
         if tokenList == [] or tokenList == [None]:
             return tokens.string.String("")
 
-        result = self.createSyntaxTree(tokenList)
+        result, _ = self.createSyntaxTree(tokenList)
         return result
 
     def prettyPrint(self, buf):
