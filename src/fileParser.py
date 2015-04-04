@@ -1,5 +1,5 @@
 from env import Env
-from interpreter.read import READ
+from parser import Parser
 from virtualmachine import VirtualMachine
 from errors.pylisperror import PylispError
 
@@ -74,7 +74,8 @@ class FileParser():
         """
         for i, k in self.parseFile():
             try:
-                self.vm.EVAL(READ(i))
+                parser = Parser()
+                self.vm.EVAL(parser.parseBuffer(i))
             except PylispError as e:
                 print(e, "at line", k)
                 return

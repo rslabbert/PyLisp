@@ -2,8 +2,8 @@ import readline
 from os import environ
 
 from env import Env
+from parser import Parser
 from virtualmachine import VirtualMachine, coreKeywords
-from interpreter.rep import rep
 from errors.pylisperror import PylispError
 
 
@@ -50,12 +50,6 @@ class Interpreter():
 
         self.completionCandidates = []
 
-    def run(self, line):
-        """
-        Running feeds the virtualmachine and current line into the Read Eval Print Function
-        """
-        rep(line, self.vm)
-
     def complete(self, text, state):
         """
         The completer function. Works by finding all the symbols in the environment and in the core keywords and checking if they start with the provided text
@@ -97,7 +91,10 @@ class Interpreter():
             try:
                 inp = input(self.prompt)
                 inp = self.precmd(inp)
-                self.run(inp)
+
+                parser = Parser()
+                print(self.vm.EVAL(parser.parseBuffer(inp)))
+
             except PylispError as e:
                 print(e)
                 self.cleanUp()
