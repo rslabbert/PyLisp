@@ -67,7 +67,7 @@ class VirtualMachine():
         # and it is not a core keyword raise an error, otherwise return it
         elif isinstance(self.expr, tokens.symbol.Symbol):
             val = self.env.get(self.expr.value)
-            if val is False and val not in coreKeywords:
+            if val == tokens.pylSyntax.PylSyntax.sNil and val not in coreKeywords:
                 raise SymbolNotFound(self.expr.value)
 
             self.vals = val
@@ -336,7 +336,7 @@ class VirtualMachine():
             symbol = self.continuation[1]
 
             if k == ContinuationType.cSet and self.env.get(
-                    symbol.value) is False:
+                    symbol.value) == tokens.pylSyntax.PylSyntax.sNil:
                 raise SymbolNotFound(symbol.value)
 
             env = self.continuation[2]
@@ -410,7 +410,7 @@ class VirtualMachine():
             elif len(second) > 0:
                 self.vals = Lst(first, *second)
             else:
-                self.vals = first
+                self.vals = Lst(first)
 
             self.counter = self.evalContinuation
             return
@@ -447,9 +447,9 @@ class VirtualMachine():
             libEnv = Env()
 
             val = env.get(name)
-            if val is False:
+            if val == tokens.pylSyntax.PylSyntax.sNil:
                 val = libEnv.includeStandardLib(name)
-                if val is False:
+                if val == tokens.pylSyntax.PylSyntax.sNil:
                     raise LibraryNotFound(name)
             else:
                 libEnv = val

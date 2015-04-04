@@ -61,7 +61,8 @@ class Parser:
                 ".",
                 "@",
                 "_",
-                "~"].__contains__(string)
+                "~",
+                "#"].__contains__(string)
 
     def parseToken(self, buf):
         """

@@ -12,5 +12,6 @@ pylTypes = {
     "null?": lambda x: x is None,
     "number?": lambda x: isinstance(x, (int, float)),
     "procedure?": lambda x: isinstance(x, (tokens.function.Function, partial, types.BuiltinFunctionType, types.LambdaType)),
-    "string?": lambda x: isinstance(x, str)
+    "string?": lambda x: isinstance(x, str),
+    "list?": lambda x: isinstance(x, tokens.lst.Lst)
 }

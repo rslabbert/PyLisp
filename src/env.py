@@ -1,4 +1,5 @@
 from core import libs
+from tokens.pylSyntax import PylSyntax
 
 
 class Env(dict):
@@ -46,7 +47,7 @@ class Env(dict):
             self.update({keys: vals})
             return vals
 
-    def get(self, key, default=False):
+    def get(self, key, default=PylSyntax.sNil):
         """
         Convenience function for self[key] which return the value if found, otherwise returns default
         """

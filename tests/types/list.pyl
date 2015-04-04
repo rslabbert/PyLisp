@@ -6,7 +6,7 @@
 
 ; Test using lists as arguments
 (define r (list (1 2)))
-(display (= 3(+ r)))
+(display (list? r))
 (newline)
 
 ; Test composing lists of expressions

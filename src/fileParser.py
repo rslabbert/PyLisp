@@ -27,7 +27,7 @@ class FileParser():
         buffers = []
         # The line count is kept track of for error purposes
         lineCounter = 1
-        with open(self.toRead, "r", encoding="utf-8") as f:
+        with open(self.toRead, "rU", encoding="utf-8") as f:
             currentBuffer = ""
             leftParens = 0
             rightParens = 0
@@ -36,7 +36,7 @@ class FileParser():
                 # Ignore comments
                 if c == ";":
                     while c:
-                        if c == "\n" or c == "\r":
+                        if c == "\n":
                             break
                         c = f.read(1)
                 elif c == "(":
@@ -48,8 +48,6 @@ class FileParser():
 
                 # Handle the end of an expression
                 if leftParens == rightParens and leftParens > 0:
-                    # currentBuffer = currentBuffer.replace("\n", "")
-                    # currentBuffer = currentBuffer.replace("\r", "")
                     # Remove trailing newlines and spaces
                     currentBuffer = currentBuffer.strip()
                     buffers.append((currentBuffer, lineCounter))
@@ -60,7 +58,7 @@ class FileParser():
                     rightParens = 0
 
                 # Line count incrementing
-                if c == "\n" or c == "\r":
+                if c == "\n":
                     lineCounter += 1
 
                 c = f.read(1)
