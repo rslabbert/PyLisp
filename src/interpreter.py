@@ -18,11 +18,6 @@ class Interpreter():
         username = environ["USER"]
         self.prompt = username + "> "
 
-        # Promptindent and indent variables are useful for subshells, to align
-        # brackets properly
-        self.promptIndent = len(self.prompt) - 2
-        self.indent = 0
-
         self.intro = "Welcome to the PyLisp interpreter"
 
         # Sets the global variable environment to the standard set
@@ -31,7 +26,7 @@ class Interpreter():
 
         self.vm = VirtualMachine(self.replEnv)
 
-        # Uses the readline library to gain tab completion, matchin
+        # Uses the readline library to gain tab completion, matching
         # parenthesis, and automatic history
         readline.set_completer(self.complete)
         readline.parse_and_bind('tab: complete')
@@ -73,11 +68,11 @@ class Interpreter():
         Executed on the input before the line is evaluated. Used to ensure that if the opening brackets do not match the closing brackets, the prompt is just extended
         """
         ret = line
-        indent = (ret.count("(") - ret.count(")")) * 2
+        promptIndent = len(self.prompt) - len("...")
         while ret.count("(") > ret.count(")"):
-            subSh = SubShell(self.promptIndent, self.indent + indent)
-            ret += " " + subSh.cmdloop()
-            self.indent = (ret.count("(") - ret.count(")")) * 2
+            indent = (ret.count("(") - ret.count(")")) * 2
+            ret += " " + \
+                input("\r" + " " * promptIndent + "..." + indent * " ")
 
         return ret
 
@@ -86,6 +81,7 @@ class Interpreter():
         The main loop. Gets the input, sends it to precmd, then runs it. If it encounters a pylisp error, prints the error and cleans up.
         If it enconters an EOF i.e. Ctrl-D it closes gracefully
         """
+        print(self.intro)
         while True:
             self.registers = self.vm.getRegisters()
             try:
@@ -109,20 +105,3 @@ class Interpreter():
         """
         readline.write_history_file(self.histfile)
         self.vm.setRegisters(self.registers)
-
-
-class SubShell(Interpreter):
-    """
-    Used for when the opening braces are more than the closing braces
-    """
-    def __init__(self, promptIndent, indent):
-        Interpreter.__init__(self)
-        self.intro = ""
-        self.promptIndent = promptIndent
-        self.indent = indent
-        self.prompt = promptIndent * " " + ">" + indent * " "
-
-    def cmdloop(self):
-        inp = input(self.prompt)
-        inp = self.precmd(inp)
-        return inp
