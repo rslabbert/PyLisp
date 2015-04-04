@@ -374,7 +374,8 @@ class VirtualMachine():
 
             self.func = func
             self.args = args
-            self.continuation = Continuation(ContinuationType.cResetEnv, deepcopy(self.env), keys)
+            self.continuation = Continuation(
+                ContinuationType.cResetEnv, deepcopy(self.env), keys)
             self.counter = self.evalProcedure
             return
 
@@ -526,10 +527,14 @@ class VirtualMachine():
 
             return
 
+        # If the function doesn't have a __call__ attr, then it's just a single token i.e. 2
+        # This comes after tokens.function.Function, since that doens't have a
+        # call attr
         elif not hasattr(self.func, '__call__'):
             self.vals = self.func
             self.counter = self.evalContinuation
 
+        # If the function had been previously curried, handle that
         elif isinstance(self.func, partial):
             self.counter = self.evalContinuation
 
@@ -544,6 +549,7 @@ class VirtualMachine():
                 func.args.append(*self.args)
                 self.vals = func
 
+        # Otherwise it's a builtin function that can be called normally
         else:
             self.counter = self.evalContinuation
 
@@ -555,6 +561,9 @@ class VirtualMachine():
                 self.vals = partial(self.func, *self.args)
 
     def EVAL(self, expr):
+        """
+        Main loop. Sets the proper variables, then runs self.counter until it is None, then returns the returnVal register
+        """
         self.expr = expr
         self.continuation = Continuation(ContinuationType.cEmpty)
         self.counter = self.evalValue
