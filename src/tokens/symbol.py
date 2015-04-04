@@ -2,6 +2,10 @@ from tokens.token import Token
 
 
 class Symbol(Token):
-    """Docstring for Symbol. """
+
+    """
+    Represents a symbol
+    """
+
     def __init__(self, value):
         Token.__init__(self, value)

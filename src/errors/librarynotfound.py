@@ -2,7 +2,11 @@ from errors.pylisperror import PylispError
 
 
 class LibraryNotFound(PylispError):
-    """Docstring for LibraryNotFound. """
+
+    """
+    An error used when an import statement gives a library which does not exist
+    """
+
     def __init__(self, expr, msg=""):
         PylispError.__init__(self, expr, msg)
 

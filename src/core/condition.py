@@ -1,6 +1,9 @@
 import operator as op
 from tokens.pylSyntax import PylSyntax
 
+# Containes conditional keywords, these are always included in the standard environment
+# Lambdas are used instead of builtin functions since the argument count
+# can then be accessed which is used for currying
 condition = {
     "=": lambda x, y: op.eq(x, y),
     ">": lambda x, y: op.gt(x, y),

@@ -2,7 +2,11 @@ from tokens.token import Token
 
 
 class Number(Token):
-    """Docstring for Number. """
+
+    """
+    Represents a number. The value is encoded as an int or float at initialisation
+    """
+
     def __init__(self, value):
         try:
             value = int(value)

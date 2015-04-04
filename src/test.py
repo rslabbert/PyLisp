@@ -13,18 +13,12 @@ def main():
 
     # Main loop which prompts user for input and print the response of the input handed to the rep function
     # inp = "(define (fac n) (if (= n 1) n (* n (fac (- n 1)))))"
-    testList = ["(define r 10)",
-                "r",
-                "(if (= r 10) #t #f)",
-                "(if (= r 9) #t #f)",
-                "(if (= 9 9) #t #f)",
-                "(if (= 8 9) #t #f)",
-                "(define f (lambda (x) (+ x x)))",
-                "(f 2)",
-                "((lambda (x) (+ x x)) 2)",
+    testList = ["(define r 10)", "r", "(if (= r 10) #t #f)",
+                "(if (= r 9) #t #f)", "(if (= 9 9) #t #f)",
+                "(if (= 8 9) #t #f)", "(define f (lambda (x) (+ x x)))",
+                "(f 2)", "((lambda (x) (+ x x)) 2)",
                 "(define fac (lambda (n) (if (= n 1) n (* n (fac (- n 1))))))",
-                "(fac 5)",
-                "(let ((x 2) (y 2)) (+ x y))"]
+                "(fac 5)", "(let ((x 2) (y 2)) (+ x y))"]
 
     # testList =
 

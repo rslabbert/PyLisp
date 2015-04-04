@@ -2,6 +2,10 @@ from tokens.token import Token
 
 
 class String(Token):
-    """Docstring for String. """
+
+    """
+    Represents a string
+    """
+
     def __init__(self, value):
         Token.__init__(self, value)

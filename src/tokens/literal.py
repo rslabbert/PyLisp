@@ -2,16 +2,20 @@ from tokens.token import Token
 
 
 class LiteralStart():
-    def __init__(self):
-        pass
 
+    """
+    Used when parsing to signal a literal ahead
+    """
 
-class LiteralEnd():
     def __init__(self):
         pass
 
 
 class Literal(Token):
-    """Docstring for Literal. """
+
+    """
+    Represents a literal, where everything is given as is, e.g. 'test -> test '1 -> 1 '(1 2 3) -> (1 2 3)
+    """
+
     def __init__(self, value):
         Token.__init__(self, value)

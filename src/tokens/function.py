@@ -2,7 +2,12 @@ from tokens.token import Token
 
 
 class Function(Token):
-    """Docstring for func. """
+
+    """
+    Represents a user created function
+    Contains arguments, and expr, and an environment
+    """
+
     def __init__(self, args, expr, env):
         Token.__init__(self)
         self.value = None
@@ -11,6 +16,9 @@ class Function(Token):
         self.env = env
 
     def getEnv(self, penv, *args):
+        """
+        Gets the environment by combining the provided arguments with the functions arguments
+        """
         self.env.update(penv)
         self.env.update(zip(self.args, args))
         return self.env

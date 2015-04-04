@@ -1,0 +1,12 @@
+(import io)
+
+(define (add x y) (+ x y))
+
+(define add2 (add 2))
+
+(display (= 5 (add 2 3)))
+(newline)
+(display (= 2 (add 1 1)))
+(newline)
+(display (= 4 (add2 2)))
+(newline)

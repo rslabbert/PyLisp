@@ -12,7 +12,10 @@ from errors import syntaxerror
 
 class State(Enum):
 
-    """Every type which a token can embody"""
+    """
+    Every type which a token can embody
+    """
+
     nil = 0
     comment = 1
     string = 2
@@ -23,7 +26,9 @@ class State(Enum):
 
 class Parser:
 
-    """Class responsible for parsing user input"""
+    """
+    Class responsible for parsing user input
+    """
 
     def __init__(self):
         self.state = State.nil
@@ -31,7 +36,9 @@ class Parser:
         self.position = 0
 
     def isOperator(self, string):
-        """Checks if the character provided is a operator"""
+        """
+        Checks if the character provided is a operator
+        """
         return ["+",
                 "-",
                 "*",
@@ -57,7 +64,9 @@ class Parser:
                 "~"].__contains__(string)
 
     def parseToken(self, buf):
-        """Loops through a buffer and returns the first token"""
+        """
+        Loops through a buffer and returns the first token
+        """
         currentToken = ""
         self.state = State.nil
 
@@ -120,10 +129,13 @@ class Parser:
             return False
 
     def createSyntaxTree(self, data):
-        """Takes a parsed buffer and returns a syntax tree where parens are replaced with lists containing the items between them"""
+        """
+        Takes a parsed buffer and returns a syntax tree where parens are replaced with lists containing the items between them and literals are replaced with literals
+        """
         tree = tokens.lst.Lst()
         i = 0
         while i < len(data):
+            # Parses a literal
             if isinstance(data[i], tokens.literal.LiteralStart):
                 if isinstance(data[i + 1], tokens.lst.ListStart):
                     self.state = State.literal
@@ -132,17 +144,20 @@ class Parser:
                     i += j
                     tree.append(tokens.literal.Literal(returnVal))
                 else:
-                    tree.append(tokens.literal.Literal(data[i].value))
+                    tree.append(tokens.literal.Literal(data[i + 1].value))
                     i += 1
 
+            # Parses a list
             elif isinstance(data[i], tokens.lst.ListStart):
                 returnVal, j = self.createSyntaxTree(data[i + 1:])
                 i += j
                 tree.append(returnVal)
 
+            # End a list
             elif isinstance(data[i], tokens.lst.ListEnd):
                 return tree, i + 1
 
+            # Normal character
             else:
                 if self.state == State.literal:
                     tree.append(data[i].value)
@@ -154,7 +169,9 @@ class Parser:
         return (tree if len(tree) > 1 else (tree[0] if len(tree) > 0 else []), i)
 
     def parseBuffer(self, buf):
-        """Applies the parseToken function until the entire buffer is parsed, at which point it returns a syntax tree"""
+        """
+        Applies the parseToken function until the entire buffer is parsed, at which point it returns a syntax tree
+        """
 
         if not buf.count("(") == buf.count(")"):
             raise syntaxerror.PylispSyntaxError(
@@ -173,13 +190,3 @@ class Parser:
 
         result, _ = self.createSyntaxTree(tokenList)
         return result
-
-    def prettyPrint(self, buf):
-        for i in buf:
-            if i.typ == State.listStart:
-                print("(", end=" ")
-            elif i.typ == State.listEnd:
-                print(")", end=" ")
-            else:
-                print(i.value, end=" ")
-        print()
