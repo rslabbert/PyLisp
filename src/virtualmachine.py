@@ -5,7 +5,7 @@ from errors.librarynotfound import LibraryNotFound
 from tokens.lst import Lst
 from continuation import Continuation, ContinuationType
 from env import Env
-from copy import copy, deepcopy
+from copy import deepcopy
 from functools import partial
 
 coreKeywords = ["define", "begin", "lambda", "let", "do", "if", "set!", "list",
@@ -139,7 +139,7 @@ class VirtualMachine():
                     self.ls = bindRight
                     self.continuation = Continuation(ContinuationType.cLet,
                                                      body, bindLeft,
-                                                     copy(self.env),
+                                                     deepcopy(self.env),
                                                      self.continuation)
                     self.counter = self.evalMapValue
                     return
@@ -152,7 +152,7 @@ class VirtualMachine():
 
                     self.ls = self.expr.tail()
                     self.continuation = Continuation(ContinuationType.cBegin,
-                                                     copy(self.env),
+                                                     deepcopy(self.env),
                                                      self.continuation)
                     self.counter = self.evalMapValue
                     return
@@ -291,7 +291,7 @@ class VirtualMachine():
 
             self.expr = body
             self.continuation = Continuation(ContinuationType.cResetEnv,
-                                             copy(env), k)
+                                             deepcopy(env), k)
             self.counter = self.evalValue
             return
 
@@ -301,7 +301,7 @@ class VirtualMachine():
             k = self.continuation[2]
 
             self.continuation = Continuation(ContinuationType.cResetEnv,
-                                             copy(env), k)
+                                             deepcopy(env), k)
             self.vals = results[-1] if self.vals is not None else None
             self.counter = self.evalContinuation
             return
@@ -360,8 +360,7 @@ class VirtualMachine():
 
             self.ls = args
             self.continuation = Continuation(
-                ContinuationType.cProcArgs, func,
-                Continuation(ContinuationType.cResetEnv, copy(self.env), k))
+                ContinuationType.cProcArgs, func, k)
             self.env = env
             self.counter = self.evalMapValue
             return
@@ -370,12 +369,12 @@ class VirtualMachine():
         # run by the evalProcedure function
         elif k == ContinuationType.cProcArgs:
             args = self.vals
-            func = copy(self.continuation[1])
+            func = deepcopy(self.continuation[1])
             keys = self.continuation[2]
 
             self.func = func
             self.args = args
-            self.continuation = keys
+            self.continuation = Continuation(ContinuationType.cResetEnv, deepcopy(self.env), keys)
             self.counter = self.evalProcedure
             return
 
@@ -541,7 +540,7 @@ class VirtualMachine():
                 raise PylispSyntaxError("function", "Too many arguments")
 
             else:
-                func = copy(self.func)
+                func = deepcopy(self.func)
                 func.args.append(*self.args)
                 self.vals = func
 
