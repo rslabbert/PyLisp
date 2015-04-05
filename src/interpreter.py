@@ -32,11 +32,6 @@ class Interpreter():
         readline.parse_and_bind('tab: complete')
         readline.parse_and_bind('set blink-matching-paren on')
 
-        # Automatically insert closing brackets after typing opening one
-        # http://stackoverflow.com/questions/11486757/autoclose-gnu-readline
-        readline.parse_and_bind('"(" "\C-v()\e[D"')
-        readline.parse_and_bind('"\"": "\C-v\"\C-v\"\e[D"')
-
         self.histfile = ".pylisp_history"
         try:
             readline.read_history_file(self.histfile)

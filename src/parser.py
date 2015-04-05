@@ -142,7 +142,7 @@ class Parser:
                     self.state = State.literal
                     returnVal, j = self.createSyntaxTree(data[i + 2:])
                     self.state = State.nil
-                    i += j
+                    i += j + 1
                     tree.append(tokens.literal.Literal(returnVal))
                 else:
                     tree.append(tokens.literal.Literal(data[i + 1].value))

@@ -4,8 +4,8 @@ import math
 # Lambdas are used instead of builtin functions since the argument count
 # can then be accessed which is used for currying
 pylMath = {
-    "max": lambda x, y: max(x, y),
-    "min": lambda x, y: min(x, y),
+    "max": lambda x: max(x),
+    "min": lambda x: min(x),
     "abs": lambda x: abs(x),
     "sqrt": lambda x: math.sqrt(x),
     "sin": lambda x: math.sin(x),

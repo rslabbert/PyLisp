@@ -14,10 +14,10 @@
          (export fac)
 
          (define (gcd x y)
-           (let ((n (max x y))
-                 (m (min x y)))
+           (let ((n (max (list (x y))))
+                 (m (min (list (x y)))))
              (if (= 0 (modulo n m))
-                m
+               m
                (gcd m (modulo n m)))))
 
          (define (fac n) (if (= n 0) 1 (* n (fac (- n 1))))))
@@ -28,6 +28,5 @@
 (newline)
 (display (= 6 (gcd 12 6)))
 (newline)
-
 (display (= 8 (gcd 1008 5624)))
 (newline)

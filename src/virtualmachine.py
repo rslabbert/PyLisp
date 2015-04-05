@@ -50,6 +50,7 @@ class VirtualMachine():
         """
         Evaluates the value of self.expr
         """
+
         # A catch all for when it is not a type evalValue supports. Just
         # returns the expr.
         if not isinstance(self.expr,
@@ -286,8 +287,7 @@ class VirtualMachine():
             env = self.continuation[3]
             k = self.continuation[4]
 
-            self.env.set([x.value for x in bindLeft] if len(bindLeft) > 1 else
-                         bindLeft[0].value, args)
+            self.env.set([x.value for x in bindLeft] if len(bindLeft) > 1 else bindLeft[0].value, args)
 
             self.expr = body
             self.continuation = Continuation(ContinuationType.cResetEnv,
