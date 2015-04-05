@@ -1,7 +1,7 @@
 # PyLisp
 
 ## TODO
-* Implement proper end of line checking in FileParser.py
+* Make function such as max and min operate on lists instead of args
 * Write more tests
 * Implement almost the entire scheme standard
 * Start work on a standard library
