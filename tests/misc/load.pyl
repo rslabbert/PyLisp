@@ -1,0 +1,4 @@
+(import io)
+(load "load2")
+
+(display (= test-var "test"))

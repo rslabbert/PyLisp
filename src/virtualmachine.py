@@ -7,9 +7,10 @@ from continuation import Continuation, ContinuationType
 from env import Env
 from copy import deepcopy
 from functools import partial
+import fileParser
 
 coreKeywords = ["define", "begin", "lambda", "let", "do", "if", "set!", "list",
-                "library", "import", "export", "cond"]
+                "library", "import", "export", "cond", "load"]
 
 
 class VirtualMachine():
@@ -45,6 +46,15 @@ class VirtualMachine():
         self.counter = registers[6]
         self.ls = registers[7]
         self.export = registers[8]
+
+    def loadFile(self, f):
+        fileParse = fileParser.FileParser(f + ".pyl")
+        env = Env()
+        env.setToStandardEnv()
+
+        fileParse.run()
+
+        self.env.update(fileParse.env)
 
     def evalValue(self):
         """
@@ -250,7 +260,10 @@ class VirtualMachine():
                                                      rets, self.continuation)
                     self.counter = self.evalMapValue
                     return
-
+                elif sym == "load":
+                    self.loadFile(self.expr[1].value)
+                    self.expr = None
+                    return
             else:
                 self.continuation = Continuation(ContinuationType.cProcFunc,
                                                  self.expr.tail(), self.env,
@@ -301,8 +314,7 @@ class VirtualMachine():
             env = self.continuation[1]
             k = self.continuation[2]
 
-            self.continuation = Continuation(ContinuationType.cResetEnv,
-                                             deepcopy(env), k)
+            self.continuation = k
             self.vals = results[-1] if self.vals is not None else None
             self.counter = self.evalContinuation
             return

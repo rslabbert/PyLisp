@@ -2,6 +2,7 @@ from env import Env
 from parser import Parser
 from virtualmachine import VirtualMachine
 from errors.pylisperror import PylispError
+import os
 
 
 class FileParser():
@@ -17,7 +18,8 @@ class FileParser():
         self.env = Env()
         self.env.setToStandardEnv()
         self.vm = VirtualMachine(self.env)
-        self.toRead = toRead
+        self.toRead = os.path.abspath(toRead)
+        os.chdir(os.path.dirname(self.toRead))
 
     def parseFile(self):
         """
