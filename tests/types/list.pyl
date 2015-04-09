@@ -1,13 +1,16 @@
 (import io)
 
-; Test defining list
-(list (1 2 3))
-(list ("a" "b" "c"))
-
+(define test-list (list ()))
 ; Test using lists as arguments
 (define r (list (1 2)))
-(display (list? r))
-(newline)
+(append test-list (list? r))
 
 ; Test composing lists of expressions
-(list ((+ 1 2) (+ 2 3) (+ 4 5)))
+(append test-list (= (list (3 5 9)) (list ((+ 1 2) (+ 2 3) (+ 4 5)))))
+
+(append test-list (= 1 (car (list 1 2 3))))
+
+(append test-list (= (list (2 3)) (cdr (list (1 2 3)))))
+
+(display test-list)
+(newline)
