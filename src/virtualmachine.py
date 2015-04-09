@@ -203,12 +203,13 @@ class VirtualMachine():
                     return
 
                 elif sym == "list":
-                    if isinstance(self.expr[1], Lst):
-                        self.ls = Lst(*self.expr[1])
-                    else:
+                    # if isinstance(self.expr[1], Lst):
+                        # self.ls = Lst(*self.expr[1])
+                    # else:
                         # Make sure to not have a list of a list with just one
                         # element in it
-                        self.ls = Lst(self.expr[1])
+                        # self.ls = Lst(self.expr[1])
+                    self.ls = Lst(*self.expr[1:])
                     self.counter = self.evalMapValue
                     return
 

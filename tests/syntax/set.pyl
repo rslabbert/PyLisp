@@ -2,8 +2,9 @@
 
 ; Test setting an already declared variable
 (define r 10)
-(display (= 10 r))
-(newline)
+(define test-list (list (= 10 r)))
 (set! r 5)
-(display (= 5 r))
+(set! test-list (append test-list (list (= 5 r))))
+
+(display (not (elem? #f test-list)))
 (newline)

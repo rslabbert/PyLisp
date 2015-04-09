@@ -4,9 +4,9 @@
 
 (define add2 (add 2))
 
-(display (= 5 (add 2 3)))
-(newline)
-(display (= 2 (add 1 1)))
-(newline)
-(display (= 4 (add2 2)))
+(display (not (elem? #f [
+          (= 5 (add 2 3))
+          (= 2 (add 1 1))
+          (= 4 (add2 2))
+          ])))
 (newline)

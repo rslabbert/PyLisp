@@ -6,16 +6,15 @@
          (define hello-world "Hello World!"))
 
 (import hello)
-(display (= hello-world "Hello World!"))
-(newline)
+(define test-list (list (= hello-world "Hello World!")))
 
 (library (gcd-math)
          (export gcd)
          (export fac)
 
          (define (gcd x y)
-           (let ((n (max (list (x y))))
-                 (m (min (list (x y)))))
+           (let ((n (max (list x y)))
+                 (m (min (list x y))))
              (if (= 0 (modulo n m))
                m
                (gcd m (modulo n m)))))
@@ -24,9 +23,11 @@
 
 (import gcd-math)
 
-(display (= 120 (fac 5)))
-(newline)
-(display (= 6 (gcd 12 6)))
-(newline)
-(display (= 8 (gcd 1008 5624)))
+(set! test-list (append test-list (list 
+                                    (= 120 (fac 5))
+                                    (= 6 (gcd 12 6))
+                                    (= 8 (gcd 1008 5624))
+                                    )))
+
+(display (not (elem? #f test-list)))
 (newline)

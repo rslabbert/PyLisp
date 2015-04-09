@@ -2,9 +2,8 @@
 
 ; Test functions as lambdas
 (define square (lambda (x) (+ x x)))
-(display (= 4 (square 2)))
-(newline)
 
 ; Test nested lambdas
-(display (= 4 ((lambda (x) (+ x x)) 2)))
+(display (not (elem? #f [(= 4 (square 2))
+          (= 4 ((lambda (x) (+ x x)) 2))])))
 (newline)

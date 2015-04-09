@@ -2,8 +2,8 @@
 (import math)
 
 (define (gcd x y)
-  (let ((n (max x y))
-        (m (min x y)))
+  (let ((n (max [x y]))
+        (m (min [x y])))
     (if (= 0 (modulo n m))
       m
       (gcd m (modulo n m)))))

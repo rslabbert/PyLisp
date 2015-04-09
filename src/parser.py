@@ -85,8 +85,10 @@ class Parser:
                     self.state = State.string
                 elif c == "(":
                     return tokens.lst.ListStart()
-                elif c == ")":
+                elif c == ")" or c == "]":
                     return tokens.lst.ListEnd()
+                elif c == "[":
+                    return [tokens.lst.ListStart(), tokens.symbol.Symbol("list")]
                 elif c.isalpha() or self.isOperator(c):
                     self.state = State.symbol
                 elif c.isdigit():
@@ -103,7 +105,7 @@ class Parser:
             if self.state == State.symbol:
                 if c.isspace() or c == "\n":
                     return tokens.symbol.Symbol(currentToken)
-                elif c == "(" or c == ")":
+                elif c == "(" or c == ")" or c == "[" or c == "]":
                     self.position -= 1
                     return tokens.symbol.Symbol(currentToken)
                 else:
@@ -112,7 +114,7 @@ class Parser:
             elif self.state == State.num:
                 if c.isspace() or c == "\n":
                     return tokens.number.Number(currentToken)
-                elif c == "(" or c == ")":
+                elif c == "(" or c == ")" or c == "[" or c == "]":
                     self.position -= 1
                     return tokens.number.Number(currentToken)
                 else:
@@ -184,7 +186,8 @@ class Parser:
 
         tokenList = []
         while self.position < len(buf):
-            tokenList.append(self.parseToken(buf[self.position:]))
+            parsed = self.parseToken(buf[self.position:])
+            tokenList.extend(parsed) if isinstance(parsed, list) else tokenList.append(parsed)
 
         if tokenList == [] or tokenList == [None]:
             return tokens.string.String("")

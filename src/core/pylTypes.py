@@ -40,11 +40,11 @@ lists = {
     "init": lambda x: x[:-1],
     "last": lambda x: x[-1],
     "length": lambda x: len(x),
-    "append": lambda x, y: x.extend(y) if isinstance(y, tokens.lst.Lst) else x.append(y),
+    "append": lambda x, y: x + y if isinstance(y, tokens.lst.Lst) else x + [y],
     "reverse": lambda x: x.reverse(),
     "take": lambda x, y: y[:x],
     "index": lambda x, y: y.index(x),
-    "elem?": lambda x, y: not y.index(x) == -1,
+    "elem?": lambda x, y: x in y,
     "zip": lambda x, y: tokens.lst.Lst(*zip(x, y))
 }
 

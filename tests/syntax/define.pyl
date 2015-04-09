@@ -4,6 +4,3 @@
 (define r 10)
 (display (= 10 r))
 (newline)
-(define r (+ 2 r))
-(display (= 12 r))
-(newline)
