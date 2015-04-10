@@ -27,7 +27,7 @@ strings = {
 }
 
 generic = {
-    "null?": lambda x: x is None,
+    "nil?": lambda x: x is None,
 }
 
 lists = {
@@ -35,8 +35,6 @@ lists = {
     "list?": lambda x: isinstance(x, tokens.lst.Lst),
     "car": lambda x: x[0],
     "cdr": lambda x: x[1:],
-    "head": lambda x: x[0],
-    "tail": lambda x: x[1:],
     "init": lambda x: x[:-1],
     "last": lambda x: x[-1],
     "length": lambda x: len(x),
@@ -45,7 +43,8 @@ lists = {
     "take": lambda x, y: y[:x],
     "index": lambda x, y: y.index(x),
     "elem?": lambda x, y: x in y,
-    "zip": lambda x, y: tokens.lst.Lst(*zip(x, y))
+    "zip": lambda x, y: tokens.lst.Lst(*zip(x, y)),
+    "null?": lambda x: len(x) == 0
 }
 
 pylTypes = {}

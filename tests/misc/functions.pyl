@@ -1,0 +1,21 @@
+(import io)
+
+(define (map f x)
+  (if (null? x)
+    []
+    (append
+      [(f (car x))]
+      (map f (cdr x)))))
+
+(define (filter c x)
+  (cond 
+    ((null? x) [])
+    ((c (car x)) (append [(car x)] (filter c (cdr x))))
+    (else (filter c (cdr x)))))
+
+
+(display (not (elem? #f [
+                         (= [2 3 4] (map (+ 1) [1 2 3]))
+                         (= [1 2 3 5] (filter number? [1 2 3 "one" "two" "three" 5]))
+                         ])))
+(newline)

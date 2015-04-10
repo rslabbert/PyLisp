@@ -255,10 +255,10 @@ class VirtualMachine():
                     conds = Lst(*[x.head() for x in exprs])
                     rets = Lst(*[x.tail() for x in exprs])
 
-                    self.ls = conds
-                    self.continuation = Continuation(ContinuationType.cCond,
+                    self.expr = conds.head()
+                    self.continuation = Continuation(ContinuationType.cCond, conds.tail(),
                                                      rets, self.continuation)
-                    self.counter = self.evalMapValue
+                    self.counter = self.evalValue
                     return
                 elif sym == "load":
                     self.loadFile(self.expr[1].value)
@@ -301,7 +301,8 @@ class VirtualMachine():
             env = self.continuation[3]
             k = self.continuation[4]
 
-            self.env.set([x.value for x in bindLeft] if len(bindLeft) > 1 else bindLeft[0].value, args)
+            self.env.set([x.value for x in bindLeft] if len(
+                bindLeft) > 1 else bindLeft[0].value, args)
 
             self.expr = body
             self.continuation = Continuation(ContinuationType.cResetEnv,
@@ -476,18 +477,26 @@ class VirtualMachine():
         # Checks every condition until a true or else is found, then returns
         # the corresponding return value
         elif k == ContinuationType.cCond:
-            conds = self.vals
-            rets = self.continuation[1]
-            k = self.continuation[2]
+            cond = self.vals
+            conds = self.continuation[1]
+            rets = self.continuation[2]
+            k = self.continuation[3]
 
-            for i, v in enumerate(conds):
-                if v is True or v == tokens.pylSyntax.PylSyntax.sElse:
-                    self.expr = rets[i]
-                    break
-                else:
-                    self.expr = None
+            if cond is True or cond == tokens.pylSyntax.PylSyntax.sElse:
+                self.expr = rets.head()
+                self.continuation = k
+            else:
+                self.expr = conds.head()
+                self.continuation = Continuation(
+                    ContinuationType.cCond, conds.tail(), rets.tail(), k)
 
-            self.continuation = k
+            # for i, v in enumerate(conds):
+                # if v is True or v == tokens.pylSyntax.PylSyntax.sElse:
+                # self.expr = rets[i]
+                # break
+                # else:
+                # self.expr = None
+
             self.counter = self.evalValue
             return
 
@@ -551,15 +560,15 @@ class VirtualMachine():
         elif isinstance(self.func, partial):
             self.counter = self.evalContinuation
 
-            if len(self.args) == self.func.__code__.co_argcount:
+            if len(self.args) == self.func.func.__code__.co_argcount - len(self.func.args):
                 self.vals = self.func(*self.args)
 
-            elif len(self.args) > len(self.func.args):
+            elif len(self.args) > self.func.func.__code__.co_argcount - len(self.func.args):
                 raise PylispSyntaxError("function", "Too many arguments")
 
             else:
-                func = deepcopy(self.func)
-                func.args.append(*self.args)
+                func = partial(
+                    self.func.func, *list(self.func.args) + self.args)
                 self.vals = func
 
         # Otherwise it's a builtin function that can be called normally
