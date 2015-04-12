@@ -79,7 +79,8 @@ class VirtualMachine():
         """
         Sets all the registers
         """
-        (self.expr, self.env, self.continuation, self.vals, self.func, self.args, self.counter, self.ls, self.export) = registers
+        (self.expr, self.env, self.continuation, self.vals, self.func,
+         self.args, self.counter, self.ls, self.export) = registers
 
     def evalValue(self):
         """
@@ -283,7 +284,8 @@ class VirtualMachine():
                     env = Env()
                     env.setToStandardEnv()
 
-                    fileParse = fileParser.FileParser(self.expr[1].value + ".pyl", VirtualMachine(env))
+                    fileParse = fileParser.FileParser(
+                        self.expr[1].value + ".pyl", VirtualMachine(env))
                     fileParse.run()
 
                     self.env.update(fileParse.vm.env)
@@ -515,13 +517,6 @@ class VirtualMachine():
                 self.expr = conds.head()
                 self.continuation = Continuation(
                     ContinuationType.cCond, conds.tail(), rets.tail(), k)
-
-            # for i, v in enumerate(conds):
-                # if v is True or v == tokens.pylSyntax.PylSyntax.sElse:
-                # self.expr = rets[i]
-                # break
-                # else:
-                # self.expr = None
 
             self.counter = self.evalValue
             return
