@@ -1,6 +1,4 @@
-from env import Env
 from parser import Parser
-from virtualmachine import VirtualMachine
 from errors.pylisperror import PylispError
 import os
 
@@ -11,13 +9,11 @@ class FileParser():
     FileParser is provided a filename and will then proceed to read the file and run each segment of code
     """
 
-    def __init__(self, toRead):
+    def __init__(self, toRead, vm):
         """
         Initliases the virtual machine and environment at the start
         """
-        self.env = Env()
-        self.env.setToStandardEnv()
-        self.vm = VirtualMachine(self.env)
+        self.vm = vm
         self.toRead = os.path.abspath(toRead)
         os.chdir(os.path.dirname(self.toRead))
 

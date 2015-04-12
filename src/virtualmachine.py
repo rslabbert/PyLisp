@@ -17,13 +17,55 @@ class VirtualMachine():
 
     """
     The main machine which evaluates the ast.
-    Based on a (C)ontrol, (E)nvironment, (K)ontinuation, or CEK machine, the vm works by holding a number of registers.
-    The machine is implemented as a continuous loop which continues to execute until self.counter == None. While executing it runs self.counter()
-    This implementation provides speed, recursion(tail loop optimisation), and easy addition of new features.
+    Based on a (C)ontrol, (E)nvironment, (K)ontinuation, or CEK machine, for full information see http://www.cs.tufts.edu/~nr/cs257/archive/matthias-felleisen/cesk.pdf
     """
 
     def __init__(self, env):
-        self.expr = self.continuation = self.vals = self.func = self.args = self.counter = self.ls = self.returnVal = self.export = None
+        """
+        In this all the registers are created
+        """
+        # The PyLisp expression will be evaluated into a form which the machine
+        # understands
+        self.expr = None
+
+        # What to do after the current expression is handled. A list, the last
+        # element is normally the next continuation. Ends in cEmpty signalling
+        # end of the execution.
+        self.continuation = None
+
+        # The value(s) returned after expression is evaluated
+        self.vals = None
+
+        # A function to be called. Can be either a user defined
+        # function(tokens.function.Function) or a builtin
+        self.func = None
+
+        # The arguments which will be passed to self.func
+        self.args = None
+
+        # The next function to be executed, chosen from the methods of this
+        # class e.g. self.evalValue
+        self.counter = None
+
+        # A list of expressions to be evaluated. It is always used in
+        # conjunction with self.evalMapValue(). Used for example when
+        # evaluating arguments passed to a function i.e. (+ (+ 1 2) 2) ->
+        # self.ls = [(+ 1 2), 2]
+        self.ls = None
+
+        # A register which is used purely for the interactive prompt.
+        # Represents the last value returned evaluated, thus can be used to
+        # print expressions, e.g. (+ 1 2) will have a self.returnval of 3
+        self.returnVal = None
+
+        # Used in conjunction with libraries, contains all the values being
+        # exported.
+        self.export = None
+
+        # The environment which stores all the symbols besides core keywords.
+        # It's used to evaluate symbols and variable definitions
+        # e.g. number? will evaluate to lambda x: isinstance(x,
+        # tokens.number.Number)
         self.env = env
 
     def getRegisters(self):
@@ -37,24 +79,7 @@ class VirtualMachine():
         """
         Sets all the registers
         """
-        self.expr = registers[0]
-        self.env = registers[1]
-        self.continuation = registers[2]
-        self.vals = registers[3]
-        self.func = registers[4]
-        self.args = registers[5]
-        self.counter = registers[6]
-        self.ls = registers[7]
-        self.export = registers[8]
-
-    def loadFile(self, f):
-        fileParse = fileParser.FileParser(f + ".pyl")
-        env = Env()
-        env.setToStandardEnv()
-
-        fileParse.run()
-
-        self.env.update(fileParse.env)
+        (self.expr, self.env, self.continuation, self.vals, self.func, self.args, self.counter, self.ls, self.export) = registers
 
     def evalValue(self):
         """
@@ -213,12 +238,6 @@ class VirtualMachine():
                     return
 
                 elif sym == "list":
-                    # if isinstance(self.expr[1], Lst):
-                        # self.ls = Lst(*self.expr[1])
-                    # else:
-                        # Make sure to not have a list of a list with just one
-                        # element in it
-                        # self.ls = Lst(self.expr[1])
                     self.ls = Lst(*self.expr[1:])
                     self.counter = self.evalMapValue
                     return
@@ -261,7 +280,14 @@ class VirtualMachine():
                     self.counter = self.evalValue
                     return
                 elif sym == "load":
-                    self.loadFile(self.expr[1].value)
+                    env = Env()
+                    env.setToStandardEnv()
+
+                    fileParse = fileParser.FileParser(self.expr[1].value + ".pyl", VirtualMachine(env))
+                    fileParse.run()
+
+                    self.env.update(fileParse.vm.env)
+
                     self.expr = None
                     return
             else:

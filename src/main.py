@@ -13,8 +13,13 @@ def main():
         interpreter.cmdloop()
     else:
         from fileParser import FileParser
+        from virtualmachine import VirtualMachine
+        from env import Env
 
-        parser = FileParser(sys.argv[1])
+        env = Env()
+        env.setToStandardEnv()
+
+        parser = FileParser(sys.argv[1], VirtualMachine(env))
         parser.run()
 
 if __name__ == '__main__':
