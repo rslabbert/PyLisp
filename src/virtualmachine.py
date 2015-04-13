@@ -17,7 +17,7 @@ class VirtualMachine():
 
     """
     The main machine which evaluates the ast.
-    Based on a (C)ontrol, (E)nvironment, (K)ontinuation, or CEK machine, for full information see http://www.cs.tufts.edu/~nr/cs257/archive/matthias-felleisen/cesk.pdf
+    Based on a (C)ontrol, (E)nvironment, (K)ontinuation, or CEK machine
     """
 
     def __init__(self, env):
@@ -281,14 +281,7 @@ class VirtualMachine():
                     self.counter = self.evalValue
                     return
                 elif sym == "load":
-                    env = Env()
-                    env.setToStandardEnv()
-
-                    fileParse = fileParser.FileParser(
-                        self.expr[1].value + ".pyl", VirtualMachine(env))
-                    fileParse.run()
-
-                    self.env.update(fileParse.vm.env)
+                    self.continuation = Continuation(ContinuationType.cLoad, self.expr[1].value, self.continuation)
 
                     self.expr = None
                     return
@@ -490,9 +483,15 @@ class VirtualMachine():
 
             val = env.get(name)
             if val == tokens.pylSyntax.PylSyntax.sNil:
-                val = libEnv.includeStandardLib(name)
-                if val == tokens.pylSyntax.PylSyntax.sNil:
-                    raise LibraryNotFound(name)
+                val = libEnv.includeBuiltinLib(name)
+                if val is False:
+                    val = libEnv.includeStandardLib(name)
+                    if val is False:
+                        raise LibraryNotFound(name)
+                    else:
+                        for i in val:
+                            self.continuation = Continuation(ContinuationType.cLoad, i.split(".")[0], self.continuation)
+                            return
             else:
                 libEnv = val
 
@@ -518,6 +517,22 @@ class VirtualMachine():
                 self.continuation = Continuation(
                     ContinuationType.cCond, conds.tail(), rets.tail(), k)
 
+            self.counter = self.evalValue
+            return
+        elif k == ContinuationType.cLoad:
+            name = self.continuation[1]
+            k = self.continuation[2]
+
+            env = Env()
+            env.setToStandardEnv()
+
+            fileParse = fileParser.FileParser(
+                name + ".pyl", VirtualMachine(env))
+            fileParse.run()
+
+            self.env.update(fileParse.vm.env)
+
+            self.continuation = k
             self.counter = self.evalValue
             return
 

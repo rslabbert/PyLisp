@@ -1,0 +1,5 @@
+(define (filter c x)
+  (cond 
+    ((null? x) [])
+    ((c (car x)) (append [(car x)] (filter c (cdr x))))
+    (else (filter c (cdr x)))))

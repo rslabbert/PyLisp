@@ -24,6 +24,7 @@ class ContinuationType(Enum):
     cResetEnv = 13
     cDefine = 14
     cCond = 15
+    cLoad = 16
 
 
 class Continuation(Lst):

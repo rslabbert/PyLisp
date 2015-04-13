@@ -1,5 +1,7 @@
 from core import libs
 from tokens.pylSyntax import PylSyntax
+from inspect import getfile
+import os
 
 
 class Env(dict):
@@ -15,23 +17,54 @@ class Env(dict):
         dict.__init__(self)
         self.update(secEnv)
 
+        # The standard library will be in PyLisp/std
+        self.stdPath = os.path.join(
+            os.path.dirname(os.path.dirname(getfile(Env))), "std")
+        self.stdLibs = {}
+
+        # for path, dirs, files in os.walk(self.stdPath):
+        # for i in files:
+        # if i.endswith(".pyl"):
+        # self.stdLibs[i.split(".")[0]] = os.path.join(path, i)
+
+        for lib in os.listdir(self.stdPath):
+            self.stdLibs[lib.split(".")[0]] = os.path.join(self.stdPath, lib)
+
     def setToStandardEnv(self):
         """
         Sets the standard environment which contains all the default and language specific symbols
         """
-        self.includeStandardLib("arithmetic")
-        self.includeStandardLib("condition")
-        self.includeStandardLib("types")
-        env = self
-        self.update({"debug": lambda: print(env)})
+        self.includeBuiltinLib("arithmetic")
+        self.includeBuiltinLib("condition")
+        self.includeBuiltinLib("types")
+        self.includeStandardLib("functions")
+
+    def includeBuiltinLib(self, lib):
+        """
+        Searches for the provided lib in the lib lookup table, and if found inserts it into the environment otherwise returns false
+        """
+        val = libs.libs.get(lib)
+        if val is not None:
+            self.update(val)
+        else:
+            return False
 
     def includeStandardLib(self, lib):
         """
         Searches for the provided lib in the lib lookup table, and if found inserts it into the environment otherwise returns false
         """
-        val = libs.libs[lib]
+        val = self.stdLibs.get(lib)
+        retList = []
         if val is not None:
-            self.update(val)
+            if os.path.isdir(val):
+                for path, dires, files in os.walk(val):
+                    for i in files:
+                        if i.endswith(".pyl"):
+                            retList.append(os.path.join(path, i))
+            else:
+                retList.append(os.path.join(path, val))
+
+            return retList
         else:
             return False
 
