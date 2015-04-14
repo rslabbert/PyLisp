@@ -22,11 +22,6 @@ class Env(dict):
             os.path.dirname(os.path.dirname(getfile(Env))), "std")
         self.stdLibs = {}
 
-        # for path, dirs, files in os.walk(self.stdPath):
-        # for i in files:
-        # if i.endswith(".pyl"):
-        # self.stdLibs[i.split(".")[0]] = os.path.join(path, i)
-
         for lib in os.listdir(self.stdPath):
             self.stdLibs[lib.split(".")[0]] = os.path.join(self.stdPath, lib)
 
