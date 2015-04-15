@@ -5,7 +5,7 @@ from errors.librarynotfound import LibraryNotFound
 from tokens.lst import Lst
 from continuation import Continuation, ContinuationType
 from env import Env
-from copy import copy
+from copy import deepcopy, copy
 from functools import partial
 import fileParser
 
@@ -590,7 +590,7 @@ class VirtualMachine():
 
             # Otherwise, curry the function by setting some of the arguments
             else:
-                func = copy(self.func)
+                func = deepcopy(self.func)
                 func.env.update(func.getEnv(*self.args))
                 func.args = func.args[len(self.args):]
                 self.vals = func
