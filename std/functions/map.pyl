@@ -1,6 +1,0 @@
-(define (map f x)
-  (if (null? x)
-    []
-    (append
-      [(f (car x))]
-      (map f (cdr x)))))

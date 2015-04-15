@@ -17,6 +17,18 @@ class FileParser():
         self.toRead = os.path.abspath(toRead)
         os.chdir(os.path.dirname(self.toRead))
 
+    def loadStd(self):
+        toRead = self.toRead
+        for k in self.vm.env.stdLibs:
+            toLoad = self.vm.env.includeStandardLib(k, self.vm.env.stdLibs[k])
+            for i in toLoad:
+                self.toRead = i
+                os.chdir(os.path.dirname(self.toRead))
+                self.run()
+
+        self.toRead = toRead
+        os.chdir(os.path.dirname(self.toRead))
+
     def parseFile(self):
         """
         The file is parsed by keeping count of all opening and closing parenthesis and then reading a character at a time.

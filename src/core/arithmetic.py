@@ -27,4 +27,6 @@ arithmetic = {
     "loge": lambda x: math.log1p(x),
     "floor": lambda x: math.floor(x),
     "ceil": lambda x: math.ceil(x),
+    "pi": math.pi,
+    "e": math.e,
 }

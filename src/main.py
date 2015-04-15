@@ -10,6 +10,7 @@ def main():
 
         # Main loop which prompts user for input and print the response of the input handed to the rep function
         interpreter = Interpreter()
+        interpreter.loadStd()
         interpreter.cmdloop()
     else:
         from fileParser import FileParser
@@ -20,7 +21,10 @@ def main():
         env.setToStandardEnv()
 
         parser = FileParser(sys.argv[1], VirtualMachine(env))
+        parser.loadStd()
         parser.run()
 
 if __name__ == '__main__':
+    # import cProfile
+    # cProfile.run('main()')
     main()

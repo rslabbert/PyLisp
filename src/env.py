@@ -32,7 +32,6 @@ class Env(dict):
         self.includeBuiltinLib("arithmetic")
         self.includeBuiltinLib("condition")
         self.includeBuiltinLib("types")
-        self.includeStandardLib("functions")
 
     def includeBuiltinLib(self, lib):
         """
@@ -44,24 +43,20 @@ class Env(dict):
         else:
             return False
 
-    def includeStandardLib(self, lib):
+    def includeStandardLib(self, lib, path):
         """
         Searches for the provided lib in the lib lookup table, and if found inserts it into the environment otherwise returns false
         """
-        val = self.stdLibs.get(lib)
         retList = []
-        if val is not None:
-            if os.path.isdir(val):
-                for path, dires, files in os.walk(val):
-                    for i in files:
-                        if i.endswith(".pyl"):
-                            retList.append(os.path.join(path, i))
-            else:
-                retList.append(os.path.join(path, val))
-
-            return retList
+        if os.path.isdir(path):
+            for root, dirs, files in os.walk(path):
+                for i in files:
+                    if i.endswith(".pyl"):
+                        retList.append(os.path.join(root, i))
         else:
-            return False
+            retList.append(path)
+
+        return retList
 
     def set(self, keys, vals):
         """

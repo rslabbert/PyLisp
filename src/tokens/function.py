@@ -15,10 +15,9 @@ class Function(Token):
         self.expr = expr
         self.env = env
 
-    def getEnv(self, penv, *args):
+    def getEnv(self, *args):
         """
         Gets the environment by combining the provided arguments with the functions arguments
         """
-        self.env.update(penv)
         self.env.update(zip(self.args, args))
         return self.env

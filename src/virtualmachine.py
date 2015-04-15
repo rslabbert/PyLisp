@@ -5,7 +5,7 @@ from errors.librarynotfound import LibraryNotFound
 from tokens.lst import Lst
 from continuation import Continuation, ContinuationType
 from env import Env
-from copy import deepcopy
+from copy import copy
 from functools import partial
 import fileParser
 
@@ -145,10 +145,10 @@ class VirtualMachine():
                     # so make the body the arguments
                     if body is None:
                         self.vals = tokens.function.Function(
-                            [], args, self.env)
+                            [], args, Env())
                     else:
                         self.vals = tokens.function.Function(
-                            args, body, self.env)
+                            args, body, Env())
 
                     self.counter = self.evalContinuation
                     return
@@ -176,7 +176,7 @@ class VirtualMachine():
                     self.ls = bindRight
                     self.continuation = Continuation(ContinuationType.cLet,
                                                      body, bindLeft,
-                                                     deepcopy(self.env),
+                                                     self.env,
                                                      self.continuation)
                     self.counter = self.evalMapValue
                     return
@@ -189,7 +189,7 @@ class VirtualMachine():
 
                     self.ls = self.expr.tail()
                     self.continuation = Continuation(ContinuationType.cBegin,
-                                                     deepcopy(self.env),
+                                                     self.env,
                                                      self.continuation)
                     self.counter = self.evalMapValue
                     return
@@ -219,7 +219,7 @@ class VirtualMachine():
                     if isinstance(self.expr[1], Lst):
                         name = self.expr[1].head()
                         self.vals = tokens.function.Function(
-                            self.expr[1].tail(), self.expr[2], self.env)
+                            self.expr[1].tail(), self.expr[2], Env())
                         self.counter = self.evalContinuation
                     else:
                         name = self.expr[1]
@@ -311,7 +311,12 @@ class VirtualMachine():
         # Used after certain expressions to reset the environment
         # This emulates local environments for functions and let expressions
         elif k == ContinuationType.cResetEnv:
-            self.env = self.continuation[1]
+            for k, v in self.continuation[1].items():
+                if v == tokens.pylSyntax.PylSyntax.sNil:
+                    del self.env[k]
+                else:
+                    self.env[k] = v
+            self.env.update(self.continuation[1])
             self.continuation = self.continuation[2]
             return
 
@@ -322,12 +327,16 @@ class VirtualMachine():
             env = self.continuation[3]
             k = self.continuation[4]
 
+            init = {}
+
+            for x in bindLeft:
+                init[x.value] = self.env.get(x.value)
+
             self.env.set([x.value for x in bindLeft] if len(
                 bindLeft) > 1 else bindLeft[0].value, args)
 
             self.expr = body
-            self.continuation = Continuation(ContinuationType.cResetEnv,
-                                             deepcopy(env), k)
+            self.continuation = Continuation(ContinuationType.cResetEnv, init, k)
             self.counter = self.evalValue
             return
 
@@ -404,13 +413,12 @@ class VirtualMachine():
         # run by the evalProcedure function
         elif k == ContinuationType.cProcArgs:
             args = self.vals
-            func = deepcopy(self.continuation[1])
+            func = copy(self.continuation[1])
             keys = self.continuation[2]
 
             self.func = func
             self.args = args
-            self.continuation = Continuation(
-                ContinuationType.cResetEnv, deepcopy(self.env), keys)
+            self.continuation = keys
             self.counter = self.evalProcedure
             return
 
@@ -485,7 +493,7 @@ class VirtualMachine():
             if val == tokens.pylSyntax.PylSyntax.sNil:
                 val = libEnv.includeBuiltinLib(name)
                 if val is False:
-                    val = libEnv.includeStandardLib(name)
+                    val = libEnv.includeStandardLib(name, libEnv.stdLibs[name])
                     if val is False:
                         raise LibraryNotFound(name)
                     else:
@@ -568,7 +576,12 @@ class VirtualMachine():
 
             # If the arguments are equal then evalute the function
             if len(self.args) == len(self.func.args):
-                self.env = self.func.getEnv(self.env, *self.args)
+                env = self.func.getEnv(*self.args)
+                init = {}
+                for k in env.keys():
+                    init[k] = self.env.get(k)
+                self.env.update(env)
+                self.continuation = Continuation(ContinuationType.cResetEnv, init, self.continuation)
                 self.counter = self.evalValue
 
             # If it's more than, return an error
@@ -577,8 +590,8 @@ class VirtualMachine():
 
             # Otherwise, curry the function by setting some of the arguments
             else:
-                func = deepcopy(self.func)
-                func.env = func.getEnv(self.env, *self.args)
+                func = copy(self.func)
+                func.env.update(func.getEnv(*self.args))
                 func.args = func.args[len(self.args):]
                 self.vals = func
                 self.counter = self.evalContinuation

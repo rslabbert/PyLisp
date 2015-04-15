@@ -4,6 +4,7 @@ from os import environ
 from env import Env
 from parser import Parser
 from virtualmachine import VirtualMachine, coreKeywords
+from fileParser import FileParser
 from errors.pylisperror import PylispError
 
 
@@ -39,6 +40,13 @@ class Interpreter():
             pass
 
         self.completionCandidates = []
+
+    def loadStd(self):
+        for k in self.vm.env.stdLibs:
+            toLoad = self.vm.env.includeStandardLib(k, self.vm.env.stdLibs[k])
+            for i in toLoad:
+                fileParse = FileParser(i, self.vm)
+                fileParse.run()
 
     def complete(self, text, state):
         """
