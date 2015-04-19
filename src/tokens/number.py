@@ -2,7 +2,6 @@ from tokens.token import Token
 
 
 class Number(Token):
-
     """
     Represents a number. The value is encoded as an int or float at initialisation
     """

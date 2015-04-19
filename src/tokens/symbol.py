@@ -2,7 +2,6 @@ from tokens.token import Token
 
 
 class Symbol(Token):
-
     """
     Represents a symbol
     """

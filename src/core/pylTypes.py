@@ -6,29 +6,21 @@ import types
 # Testing for types is in here instead of inside conditionals to keep common elements connected
 # Lambdas are used instead of builtin functions since the argument count
 # can then be accessed which is used for currying
-booleans = {
-    "boolean?": lambda x: isinstance(x, bool),
-}
+booleans = {"boolean?": lambda x: isinstance(x, bool), }
 
-symbols = {
-    "symbol?": lambda x: isinstance(x, tokens.symbol.Symbol),
-}
+symbols = {"symbol?": lambda x: isinstance(x, tokens.symbol.Symbol), }
 
-numbers = {
-    "number?": lambda x: isinstance(x, (int, float)),
-}
+numbers = {"number?": lambda x: isinstance(x, (int, float)), }
 
 functions = {
-    "procedure?": lambda x: isinstance(x, (tokens.function.Function, partial, types.BuiltinFunctionType, types.LambdaType)),
+    "procedure?": lambda x: isinstance(x, (tokens.function.Function, partial,
+                                           types.BuiltinFunctionType,
+                                           types.LambdaType)),
 }
 
-strings = {
-    "string?": lambda x: isinstance(x, str),
-}
+strings = {"string?": lambda x: isinstance(x, str), }
 
-generic = {
-    "nil?": lambda x: x is None,
-}
+generic = {"nil?": lambda x: x is None, }
 
 lists = {
     # Car and cdr for compatibility with other schemes
@@ -47,11 +39,11 @@ lists = {
     "null?": lambda x: len(x) == 0
 }
 
-pylTypes = {}
-pylTypes.update(booleans)
-pylTypes.update(symbols)
-pylTypes.update(numbers)
-pylTypes.update(functions)
-pylTypes.update(strings)
-pylTypes.update(generic)
-pylTypes.update(lists)
+pyl_types = {}
+pyl_types.update(booleans)
+pyl_types.update(symbols)
+pyl_types.update(numbers)
+pyl_types.update(functions)
+pyl_types.update(strings)
+pyl_types.update(generic)
+pyl_types.update(lists)

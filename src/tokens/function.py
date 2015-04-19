@@ -2,7 +2,6 @@ from tokens.token import Token
 
 
 class Function(Token):
-
     """
     Represents a user created function
     Contains arguments, and expr, and an environment

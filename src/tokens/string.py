@@ -2,7 +2,6 @@ from tokens.token import Token
 
 
 class String(Token):
-
     """
     Represents a string
     """

@@ -1,5 +1,5 @@
 import operator as op
-from tokens.pylSyntax import PylSyntax
+from tokens.pylsyntax import PylSyntax
 
 # Containes conditional keywords, these are always included in the standard environment
 # Lambdas are used instead of builtin functions since the argument count

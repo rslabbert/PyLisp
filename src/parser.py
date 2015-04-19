@@ -11,7 +11,6 @@ from errors import syntaxerror
 
 
 class State(Enum):
-
     """
     Every type which a token can embody
     """
@@ -25,7 +24,6 @@ class State(Enum):
 
 
 class Parser:
-
     """
     Class responsible for parsing user input
     """
@@ -35,40 +33,20 @@ class Parser:
         self.data = []
         self.position = 0
 
-    def isOperator(self, string):
+    @staticmethod
+    def is_operator(string):
         """
         Checks if the character provided is a operator
         """
-        return ["+",
-                "-",
-                "*",
-                "/",
-                "^",
-                "%",
-                "=",
-                ">",
-                "<",
-                ">=",
-                "<=",
-                "?",
-                "!",
-                "-",
-                "#",
-                ":",
-                ";",
-                "$",
-                "&",
-                ".",
-                "@",
-                "_",
-                "~",
+        return ["+", "-", "*", "/", "^", "%", "=", ">", "<", ">=", "<=", "?",
+                "!", "-", "#", ":", ";", "$", "&", ".", "@", "_", "~",
                 "#"].__contains__(string)
 
-    def parseToken(self, buf):
+    def parse_token(self, buf):
         """
         Loops through a buffer and returns the first token
         """
-        currentToken = ""
+        current_token = ""
         self.state = State.nil
 
         for i in range(0, len(buf)):
@@ -88,8 +66,9 @@ class Parser:
                 elif c == ")" or c == "]":
                     return tokens.lst.ListEnd()
                 elif c == "[":
-                    return [tokens.lst.ListStart(), tokens.symbol.Symbol("list")]
-                elif c.isalpha() or self.isOperator(c):
+                    return [tokens.lst.ListStart(),
+                            tokens.symbol.Symbol("list")]
+                elif c.isalpha() or self.is_operator(c):
                     self.state = State.symbol
                 elif c.isdigit():
                     self.state = State.num
@@ -97,41 +76,41 @@ class Parser:
             # Parses a string
             elif self.state == State.string:
                 if c == '"':
-                    return tokens.string.String(currentToken)
-                elif c.isalnum() or c.isspace() or self.isOperator(c):
-                    currentToken += c
+                    return tokens.string.String(current_token)
+                elif c.isalnum() or c.isspace() or self.is_operator(c):
+                    current_token += c
 
             # Parses a symbol or number
             if self.state == State.symbol:
                 if c.isspace() or c == "\n":
-                    return tokens.symbol.Symbol(currentToken)
+                    return tokens.symbol.Symbol(current_token)
                 elif c == "(" or c == ")" or c == "[" or c == "]":
                     self.position -= 1
-                    return tokens.symbol.Symbol(currentToken)
+                    return tokens.symbol.Symbol(current_token)
                 else:
-                    currentToken += c
+                    current_token += c
 
             elif self.state == State.num:
                 if c.isspace() or c == "\n":
-                    return tokens.number.Number(currentToken)
+                    return tokens.number.Number(current_token)
                 elif c == "(" or c == ")" or c == "[" or c == "]":
                     self.position -= 1
-                    return tokens.number.Number(currentToken)
+                    return tokens.number.Number(current_token)
                 else:
-                    currentToken += c
+                    current_token += c
 
         # Handles end of buffer strings not being closed or symbols being at
         # end
         if self.state == State.symbol:
-            return tokens.symbol.Symbol(currentToken)
+            return tokens.symbol.Symbol(current_token)
         if self.state == State.num:
-            return tokens.number.Number(currentToken)
+            return tokens.number.Number(current_token)
 
         if self.state == State.string:
             print("String not closed before newline")
             return False
 
-    def createSyntaxTree(self, data):
+    def create_syntax_tree(self, data):
         """
         Takes a parsed buffer and returns a syntax tree where parens are replaced with lists containing the items between them and literals are replaced with literals
         """
@@ -142,19 +121,19 @@ class Parser:
             if isinstance(data[i], tokens.literal.LiteralStart):
                 if isinstance(data[i + 1], tokens.lst.ListStart):
                     self.state = State.literal
-                    returnVal, j = self.createSyntaxTree(data[i + 2:])
+                    return_val, j = self.create_syntax_tree(data[i + 2:])
                     self.state = State.nil
                     i += j + 1
-                    tree.append(tokens.literal.Literal(returnVal))
+                    tree.append(tokens.literal.Literal(return_val))
                 else:
                     tree.append(tokens.literal.Literal(data[i + 1].value))
                     i += 1
 
             # Parses a list
             elif isinstance(data[i], tokens.lst.ListStart):
-                returnVal, j = self.createSyntaxTree(data[i + 1:])
+                return_val, j = self.create_syntax_tree(data[i + 1:])
                 i += j
-                tree.append(returnVal)
+                tree.append(return_val)
 
             # End a list
             elif isinstance(data[i], tokens.lst.ListEnd):
@@ -169,9 +148,9 @@ class Parser:
 
             i += 1
 
-        return (tree if len(tree) > 1 else (tree[0] if len(tree) > 0 else []), i)
+        return tree if len(tree) > 1 else (tree[0] if len(tree) > 0 else []), i
 
-    def parseBuffer(self, buf):
+    def parse_buffer(self, buf):
         """
         Applies the parseToken function until the entire buffer is parsed, at which point it returns a syntax tree
         """
@@ -184,13 +163,14 @@ class Parser:
         self.state = None
         self.data = []
 
-        tokenList = []
+        token_list = []
         while self.position < len(buf):
-            parsed = self.parseToken(buf[self.position:])
-            tokenList.extend(parsed) if isinstance(parsed, list) else tokenList.append(parsed)
+            parsed = self.parse_token(buf[self.position:])
+            token_list.extend(parsed) if isinstance(
+                parsed, list) else token_list.append(parsed)
 
-        if tokenList == [] or tokenList == [None]:
+        if token_list == [] or token_list == [None]:
             return tokens.string.String("")
 
-        result, _ = self.createSyntaxTree(tokenList)
+        result, _ = self.create_syntax_tree(token_list)
         return result

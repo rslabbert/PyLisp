@@ -2,7 +2,6 @@ from errors.pylisperror import PylispError
 
 
 class LibraryNotFound(PylispError):
-
     """
     An error used when an import statement gives a library which does not exist
     """

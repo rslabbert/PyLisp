@@ -3,13 +3,13 @@ from os import environ
 
 from env import Env
 from parser import Parser
-from virtualmachine import VirtualMachine, coreKeywords
-from fileParser import FileParser
+from virtualmachine import VirtualMachine, core_keywords
+from fileparser import FileParser
 from errors.pylisperror import PylispError
+from errors.filenotfound import FileNotFoundError
 
 
 class Interpreter():
-
     """
     A read eval print loop interactive interpreter. Takes input from the user and displays the resultant output on the next line
     """
@@ -22,10 +22,11 @@ class Interpreter():
         self.intro = "Welcome to the PyLisp interpreter"
 
         # Sets the global variable environment to the standard set
-        self.replEnv = Env()
-        self.replEnv.setToStandardEnv()
+        self.repl_env = Env()
+        self.repl_env.set_to_standard_env()
 
-        self.vm = VirtualMachine(self.replEnv)
+        self.vm = VirtualMachine(self.repl_env)
+        self.registers = None
 
         # Uses the readline library to gain tab completion, matching
         # parenthesis, and automatic history
@@ -39,28 +40,29 @@ class Interpreter():
         except FileNotFoundError:
             pass
 
-        self.completionCandidates = []
+        self.completion_candidates = []
 
-    def loadStd(self):
+    def load_std(self):
         for k in self.vm.env.stdLibs:
-            toLoad = self.vm.env.includeStandardLib(k, self.vm.env.stdLibs[k])
-            for i in toLoad:
-                fileParse = FileParser(i, self.vm)
-                fileParse.run()
+            to_load = self.vm.env.include_standard_lib(k,
+                                                       self.vm.env.stdLibs[k])
+            for i in to_load:
+                file_parse = FileParser(i, self.vm)
+                file_parse.run()
 
     def complete(self, text, state):
         """
         The completer function. Works by finding all the symbols in the environment and in the core keywords and checking if they start with the provided text
         """
         if state == 0:
-            self.completionCandidates = []
+            self.completion_candidates = []
 
-            for i in list(self.replEnv.keys()) + coreKeywords:
+            for i in list(self.repl_env.keys()) + core_keywords:
                 if i.startswith(text):
-                    self.completionCandidates.append(i)
+                    self.completion_candidates.append(i)
 
-        if state < len(self.completionCandidates):
-            result = self.completionCandidates[state]
+        if state < len(self.completion_candidates):
+            result = self.completion_candidates[state]
         else:
             result = None
 
@@ -71,11 +73,11 @@ class Interpreter():
         Executed on the input before the line is evaluated. Used to ensure that if the opening brackets do not match the closing brackets, the prompt is just extended
         """
         ret = line
-        promptIndent = len(self.prompt) - len("...")
+        prompt_indent = len(self.prompt) - len("...")
         while ret.count("(") > ret.count(")"):
             indent = (ret.count("(") - ret.count(")")) * 2
             ret += " " + \
-                input("\r" + " " * promptIndent + "..." + indent * " ")
+                input("\r" + " " * prompt_indent + "..." + indent * " ")
 
         return ret
 
@@ -86,25 +88,25 @@ class Interpreter():
         """
         print(self.intro)
         while True:
-            self.registers = self.vm.getRegisters()
+            self.registers = self.vm.get_registers()
             try:
                 inp = input(self.prompt)
                 inp = self.precmd(inp)
 
                 parser = Parser()
-                print(self.vm.EVAL(parser.parseBuffer(inp)))
+                print(self.vm.evaluate(parser.parse_buffer(inp)))
 
             except PylispError as e:
                 print(e)
-                self.cleanUp()
+                self.clean_up()
             except EOFError:
                 print("Bye")
-                self.cleanUp()
+                self.clean_up()
                 return
 
-    def cleanUp(self):
+    def clean_up(self):
         """
         Writes to history to the file and resets the registers
         """
         readline.write_history_file(self.histfile)
-        self.vm.setRegisters(self.registers)
+        self.vm.set_registers(self.registers)

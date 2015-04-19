@@ -10,19 +10,20 @@ def main():
 
         # Main loop which prompts user for input and print the response of the input handed to the rep function
         interpreter = Interpreter()
-        interpreter.loadStd()
+        interpreter.load_std()
         interpreter.cmdloop()
     else:
-        from fileParser import FileParser
+        from fileparser import FileParser
         from virtualmachine import VirtualMachine
         from env import Env
 
         env = Env()
-        env.setToStandardEnv()
+        env.set_to_standard_env()
 
         parser = FileParser(sys.argv[1], VirtualMachine(env))
-        parser.loadStd()
+        parser.load_std()
         parser.run()
+
 
 if __name__ == '__main__':
     # import cProfile

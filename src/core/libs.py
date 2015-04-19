@@ -5,6 +5,6 @@ from core import arithmetic, condition, io, pylTypes
 libs = {
     "arithmetic": arithmetic.arithmetic,
     "condition": condition.condition,
-    "types": pylTypes.pylTypes,
+    "types": pylTypes.pyl_types,
     "io": io.io
 }

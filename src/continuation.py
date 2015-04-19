@@ -4,7 +4,6 @@ from tokens.lst import Lst
 
 
 class ContinuationType(Enum):
-
     """
     An enum which provides all the states the current continuation can be in
     """
@@ -28,7 +27,6 @@ class ContinuationType(Enum):
 
 
 class Continuation(Lst):
-
     """
     A continuation is a Lst which is used to represent a chain of actions the virtual machine has to return to after the current task is complete
     """

@@ -2,7 +2,6 @@ from tokens.token import Token
 
 
 class ListStart(Token):
-
     """
     Used for parsing to singal the start of a list
     """
@@ -12,7 +11,6 @@ class ListStart(Token):
 
 
 class ListEnd(Token):
-
     """
     Used for parsing to singal the end of a list
     """
@@ -22,7 +20,6 @@ class ListEnd(Token):
 
 
 class Lst(Token, list):
-
     """
     Replaces the use of list in the virtual machine
     """

@@ -1,11 +1,10 @@
 from core import libs
-from tokens.pylSyntax import PylSyntax
+from tokens.pylsyntax import PylSyntax
 from inspect import getfile
 import os
 
 
 class Env(dict):
-
     """
     The environment which is used to find variables and symbols and their associated value
     """
@@ -25,15 +24,15 @@ class Env(dict):
         for lib in os.listdir(self.stdPath):
             self.stdLibs[lib.split(".")[0]] = os.path.join(self.stdPath, lib)
 
-    def setToStandardEnv(self):
+    def set_to_standard_env(self):
         """
         Sets the standard environment which contains all the default and language specific symbols
         """
-        self.includeBuiltinLib("arithmetic")
-        self.includeBuiltinLib("condition")
-        self.includeBuiltinLib("types")
+        self.include_builtin_lib("arithmetic")
+        self.include_builtin_lib("condition")
+        self.include_builtin_lib("types")
 
-    def includeBuiltinLib(self, lib):
+    def include_builtin_lib(self, lib):
         """
         Searches for the provided lib in the lib lookup table, and if found inserts it into the environment otherwise returns false
         """
@@ -43,7 +42,7 @@ class Env(dict):
         else:
             return False
 
-    def includeStandardLib(self, lib, path):
+    def include_standard_lib(self, lib, path):
         """
         Searches for the provided lib in the lib lookup table, and if found inserts it into the environment otherwise returns false
         """

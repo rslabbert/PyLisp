@@ -3,5 +3,7 @@
 # can then be accessed which is used for currying
 io = {
     "newline": lambda: print(""),
-    "display": lambda x: print(x, end="", sep="")
+    "display": lambda x: print(x,
+                               end="",
+                               sep="")
 }

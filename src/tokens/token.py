@@ -1,5 +1,4 @@
 class Token:
-
     """
     Parent class for every token
     """
