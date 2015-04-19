@@ -2,6 +2,7 @@
 
 ## TODO
 * Make sure functions being impored from a library/file carry over environment dependencies
+  * How to: Flatten function being exported, find dependants functions, add them to main function's env
 * Make some of the standard library be in pylisp
 * Make optimisations
 * Write more tests
