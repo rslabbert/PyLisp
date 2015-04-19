@@ -1,12 +1,13 @@
 import readline
+import atexit
 from os import environ
+from os.path import expanduser, join
 
 from env import Env
 from parser import Parser
 from virtualmachine import VirtualMachine, core_keywords
 from fileparser import FileParser
 from errors.pylisperror import PylispError
-from errors.filenotfound import FileNotFoundError
 
 
 class Interpreter():
@@ -34,13 +35,15 @@ class Interpreter():
         readline.parse_and_bind('tab: complete')
         readline.parse_and_bind('set blink-matching-paren on')
 
-        self.histfile = ".pylisp_history"
+        self.histfile = join(expanduser("~"), ".pylisp_history")
         try:
             readline.read_history_file(self.histfile)
         except FileNotFoundError:
-            pass
+            open(self.histfile, 'a').close()
 
         self.completion_candidates = []
+
+        atexit.register(readline.write_history_file, self.histfile)
 
     def load_std(self):
         for k in self.vm.env.stdLibs:
@@ -98,15 +101,7 @@ class Interpreter():
 
             except PylispError as e:
                 print(e)
-                self.clean_up()
+                self.vm.set_registers(self.registers)
             except EOFError:
                 print("Bye")
-                self.clean_up()
                 return
-
-    def clean_up(self):
-        """
-        Writes to history to the file and resets the registers
-        """
-        readline.write_history_file(self.histfile)
-        self.vm.set_registers(self.registers)
