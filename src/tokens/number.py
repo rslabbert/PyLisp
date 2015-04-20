@@ -12,3 +12,6 @@ class Number(Token):
         except ValueError:
             value = float(value)
         Token.__init__(self, value)
+
+    def __repr__(self):
+        return self.value

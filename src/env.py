@@ -18,7 +18,7 @@ class Env(dict):
 
         # The standard library will be in PyLisp/std
         self.stdPath = os.path.join(
-            os.path.dirname(os.path.dirname(getfile(Env))), "std")
+            os.path.dirname(os.path.dirname(getfile(Env))), "lib")
         self.stdLibs = {}
 
         for lib in os.listdir(self.stdPath):
@@ -70,10 +70,4 @@ class Env(dict):
             return vals
 
     def get(self, key, default=PylSyntax.sNil):
-        """
-        Convenience function for self[key] which return the value if found, otherwise returns default
-        """
-        try:
-            return self[key]
-        except:
-            return default
+        return dict.get(self, key, default)

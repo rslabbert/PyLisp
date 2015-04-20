@@ -39,8 +39,8 @@ class Parser:
         Checks if the character provided is a operator
         """
         return ["+", "-", "*", "/", "^", "%", "=", ">", "<", ">=", "<=", "?",
-                "!", "-", "#", ":", ";", "$", "&", ".", "@", "_", "~",
-                "#"].__contains__(string)
+                "!", "-", "#", ":", ";", "$", "&", ".", "@", "_", "~", "#",
+                "\\"].__contains__(string)
 
     def parse_token(self, buf):
         """

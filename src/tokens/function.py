@@ -1,4 +1,5 @@
 from tokens.token import Token
+from tokens.lst import Lst
 
 
 class Function(Token):
@@ -7,10 +8,10 @@ class Function(Token):
     Contains arguments, and expr, and an environment
     """
 
-    def __init__(self, args, expr, env):
+    def __init__(self, name, args, expr, env):
         Token.__init__(self)
-        self.value = None
-        self.args = list(map(lambda x: x.value, args))
+        self.value = name
+        self.args = Lst(*map(lambda x: x.value, args))
         self.expr = expr
         self.env = env
 
@@ -20,3 +21,6 @@ class Function(Token):
         """
         self.env.update(zip(self.args, args))
         return self.env
+
+    def __repr__(self):
+        return "{name} {args}: {expr}".format(name=self.value, args=self.args, expr=self.expr)

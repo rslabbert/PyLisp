@@ -8,3 +8,6 @@ class Symbol(Token):
 
     def __init__(self, value):
         Token.__init__(self, value)
+
+    def __repr__(self):
+        return self.value

@@ -56,3 +56,11 @@ class Lst(Token, list):
                 return result
         except TypeError:
             return result
+
+    def __repr__(self):
+        string = "("
+        for i in self:
+            string += str(i) + " "
+        string = string[:-1] + ")"
+
+        return string

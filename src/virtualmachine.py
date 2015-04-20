@@ -158,10 +158,11 @@ class VirtualMachine():
                     # If body is None, then the lambda doesn't have arguments,
                     # so make the body the arguments
                     if body is None:
-                        self.values = tokens.function.Function([], args, Env())
+                        self.values = tokens.function.Function("lambda", [],
+                                                               args, Env())
                     else:
-                        self.values = tokens.function.Function(args, body,
-                                                               Env())
+                        self.values = tokens.function.Function("lambda", args,
+                                                               body, Env())
 
                     self.counter = self.eval_continuation
                     return
@@ -233,7 +234,7 @@ class VirtualMachine():
                     if isinstance(self.expr[1], Lst):
                         name = self.expr[1].head()
                         self.values = tokens.function.Function(
-                            self.expr[1].tail(), self.expr[2], Env())
+                            name, self.expr[1].tail(), self.expr[2], Env())
                         self.counter = self.eval_continuation
                     else:
                         name = self.expr[1]
@@ -625,7 +626,7 @@ class VirtualMachine():
 
             # If it's more than, return an error
             elif len(self.args) > len(self.func.args):
-                raise PylispSyntaxError("function", "Too many arguments")
+                raise PylispSyntaxError("function {}".format(self.func.value), "Too many arguments")
 
             # Otherwise, curry the function by setting some of the arguments
             else:
@@ -654,7 +655,7 @@ class VirtualMachine():
 
             elif len(self.args) > self.func.func.__code__.co_argcount - len(
                 self.func.args):
-                raise PylispSyntaxError("function", "Too many arguments")
+                raise PylispSyntaxError("function {}".format(self.func.func), "Too many arguments")
 
             else:
                 func = partial(self.func.func,
@@ -669,7 +670,7 @@ class VirtualMachine():
                 self.func.__code__.co_varnames) > self.func.__code__.co_argcount:
                 self.values = self.func(*self.args)
             elif len(self.args) > self.func.__code__.co_argcount:
-                raise PylispSyntaxError("function", "Too many arguments")
+                raise PylispSyntaxError("function {}".format(self.func), "Too many arguments")
             else:
                 self.values = partial(self.func, *self.args)
 
