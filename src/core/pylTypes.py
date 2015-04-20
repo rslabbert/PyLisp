@@ -23,7 +23,7 @@ strings = {"string?": lambda x: isinstance(x, str), }
 generic = {"nil?": lambda x: x is None, }
 
 lists = {
-    # Car and cdr for compatibility with other schemes
+    "list": lambda *x: tokens.lst.Lst(*x),
     "list?": lambda x: isinstance(x, tokens.lst.Lst),
     "car": lambda x: x[0],
     "cdr": lambda x: x[1:],
@@ -35,7 +35,6 @@ lists = {
     "take": lambda x, y: y[:x],
     "index": lambda x, y: y.index(x),
     "elem?": lambda x, y: x in y,
-    "zip": lambda x, y: tokens.lst.Lst(*zip(x, y)),
     "null?": lambda x: len(x) == 0
 }
 

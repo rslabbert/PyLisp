@@ -670,7 +670,8 @@ class VirtualMachine():
         else:
             self.counter = self.eval_continuation
 
-            if len(self.args) == self.func.__code__.co_argcount:
+            if len(self.args) == self.func.__code__.co_argcount or len(
+                self.func.__code__.co_varnames) > self.func.__code__.co_argcount:
                 self.values = self.func(*self.args)
             elif len(self.args) > self.func.__code__.co_argcount:
                 raise PylispSyntaxError("function", "Too many arguments")
