@@ -10,7 +10,7 @@ from functools import partial
 import fileparser
 
 core_keywords = ["define", "begin", "lambda", "let", "do", "if", "set!",
-                 "list", "library", "import", "export", "cond", "load"]
+                 "library", "import", "export", "cond", "load"]
 
 
 class VirtualMachine():
@@ -250,11 +250,6 @@ class VirtualMachine():
                         self.continuation = Continuation(ContinuationType.cSet,
                                                          name, self.env,
                                                          self.continuation)
-                    return
-
-                elif sym == "list":
-                    self.list_exprs = Lst(*self.expr[1:])
-                    self.counter = self.eval_map_value
                     return
 
                 elif sym == "library":
