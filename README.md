@@ -1,8 +1,7 @@
 # PyLisp
 
 ## TODO
-* Make sure functions being impored from a library/file carry over environment dependencies
-  * How to: Flatten function being exported, find dependants functions, add them to main function's env
+* Make library use resetEnv with initials properly instead of deepcopy env
 * Make some of the standard library be in pylisp
 * Make optimisations
 * Write more tests

@@ -9,8 +9,8 @@ from copy import deepcopy, copy
 from functools import partial
 import fileparser
 
-core_keywords = ["define", "begin", "lambda", "let", "do", "if", "set!", "list",
-                "library", "import", "export", "cond", "load"]
+core_keywords = ["define", "begin", "lambda", "let", "do", "if", "set!",
+                 "list", "library", "import", "export", "cond", "load"]
 
 
 class VirtualMachine():
@@ -49,13 +49,13 @@ class VirtualMachine():
         # A list of expressions to be evaluated. It is always used in
         # conjunction with self.evalMapValue(). Used for example when
         # evaluating arguments passed to a function i.e. (+ (+ 1 2) 2) ->
-        # self.ls = [(+ 1 2), 2]
-        self.ls = None
+        # self.list_exprs = [(+ 1 2), 2]
+        self.list_exprs = None
 
         # A register which is used purely for the interactive prompt.
         # Represents the last value returned evaluated, thus can be used to
         # print expressions, e.g. (+ 1 2) will have a self.returnval of 3
-        self.returnVal = None
+        self.return_val = None
 
         # Used in conjunction with libraries, contains all the values being
         # exported.
@@ -72,14 +72,25 @@ class VirtualMachine():
         Returns all the registers
         """
         return [self.expr, self.env, self.continuation, self.values, self.func,
-                self.args, self.counter, self.ls, self.export]
+                self.args, self.counter, self.list_exprs, self.export]
 
     def set_registers(self, registers):
         """
         Sets all the registers
         """
         (self.expr, self.env, self.continuation, self.values, self.func,
-         self.args, self.counter, self.ls, self.export) = registers
+         self.args, self.counter, self.list_exprs, self.export) = registers
+
+    def flatten_expression(self, expr):
+        """
+        Completely flattens an expression to contain no lsts. Only used to loop over expressions without using recursion
+        """
+        for i in expr:
+            if isinstance(i, Lst):
+                for j in self.flatten_expression(i):
+                    yield j
+            else:
+                yield i
 
     def eval_value(self):
         """
@@ -98,6 +109,7 @@ class VirtualMachine():
         elif isinstance(self.expr, tokens.literal.Literal):
             self.values = self.expr.value
             self.counter = self.eval_continuation
+            self.expr = None
             return
         # If it is a symbol get it from the environment. If it doesn't exist
         # and it is not a core keyword raise an error, otherwise return it
@@ -108,16 +120,19 @@ class VirtualMachine():
 
             self.values = val
             self.counter = self.eval_continuation
+            self.expr = None
             return
         # Extracts a number
         elif isinstance(self.expr, tokens.number.Number):
             self.values = self.expr.value
             self.counter = self.eval_continuation
+            self.expr = None
             return
         # Extracts a string
         elif isinstance(self.expr, tokens.string.String):
             self.values = str(self.expr.value)
             self.counter = self.eval_continuation
+            self.expr = None
             return
         # Deals with Lsts
         elif isinstance(self.expr, Lst):
@@ -171,7 +186,7 @@ class VirtualMachine():
                     bind_left = Lst(*[x.head() for x in bind_cursor])
                     bind_right = Lst(*[x.tail() for x in bind_cursor])
 
-                    self.ls = bind_right
+                    self.list_exprs = bind_right
                     self.continuation = Continuation(ContinuationType.cLet,
                                                      body, bind_left, self.env,
                                                      self.continuation)
@@ -184,7 +199,7 @@ class VirtualMachine():
                         self.counter = self.eval_continuation
                         return
 
-                    self.ls = self.expr.tail()
+                    self.list_exprs = self.expr.tail()
                     self.continuation = Continuation(ContinuationType.cBegin,
                                                      self.env,
                                                      self.continuation)
@@ -238,7 +253,7 @@ class VirtualMachine():
                     return
 
                 elif sym == "list":
-                    self.ls = Lst(*self.expr[1:])
+                    self.list_exprs = Lst(*self.expr[1:])
                     self.counter = self.eval_map_value
                     return
 
@@ -247,7 +262,7 @@ class VirtualMachine():
                     self.expr = self.expr[2:]
 
                     self.continuation = Continuation(ContinuationType.cLibrary,
-                                                     name, self.env,
+                                                     name, deepcopy(self.env),
                                                      self.continuation)
                     self.counter = self.eval_value
                     return
@@ -304,8 +319,8 @@ class VirtualMachine():
         # Signals the end of an expression
         # Ends execution
         if k == ContinuationType.cEmpty:
-            if self.returnVal is None:
-                self.returnVal = self.values
+            if self.return_val is None:
+                self.return_val = self.values
 
             self.counter = None
             return
@@ -390,7 +405,7 @@ class VirtualMachine():
             k = self.continuation[3]
 
             self.env.set(symbol.value, value)
-            self.returnVal = value
+            self.return_val = value
             self.continuation = k
             self.values = None
             self.counter = self.eval_continuation
@@ -405,7 +420,7 @@ class VirtualMachine():
             env = self.continuation[2]
             k = self.continuation[3]
 
-            self.ls = args
+            self.list_exprs = args
             self.continuation = Continuation(ContinuationType.cProcArgs, func,
                                              k)
             self.env = env
@@ -434,7 +449,7 @@ class VirtualMachine():
             env = self.continuation[2]
             k = self.continuation[3]
 
-            self.ls = second
+            self.list_exprs = second
             self.env = env
             self.continuation = Continuation(ContinuationType.cMapValueOfCons,
                                              first, k)
@@ -471,9 +486,30 @@ class VirtualMachine():
             self.continuation = k
 
             lib_env = Env()
+
+            def get_dependants(expr):
+                """
+                Gets all the functions a function needs to run
+                """
+                depends = []
+                if isinstance(expr, tokens.function.Function):
+                    for j in self.flatten_expression(expr.expr):
+                        val = self.env.get(j.value)
+                        if j.value not in core_keywords and val is not tokens.pylsyntax.PylSyntax.sNil and val is not expr:
+                            if env.get(
+                                j.value) == tokens.pylsyntax.PylSyntax.sNil:
+                                depends.append((j.value, val))
+                                depends += get_dependants(val)
+
+                return depends
+
             for i in self.export:
+                # Gets all the dependants and adds it to the functions environment
+                if isinstance(self.env[i], tokens.function.Function):
+                    for ident, val in get_dependants(self.env[i]):
+                        self.env[i].env.set(ident, val)
+
                 lib_env.set(i, self.env[i])
-                del self.env[i]
 
             self.export = None
 
@@ -556,15 +592,15 @@ class VirtualMachine():
         Evaluates multiple values in a Lst.
         Works by evaluating the first element, then returning a list with all the rest. This continues until the second list is empty.
         """
-        if self.ls is None or len(self.ls) == 0:
-            self.values = self.ls
+        if self.list_exprs is None or len(self.list_exprs) == 0:
+            self.values = self.list_exprs
             self.counter = self.eval_continuation
             return
 
         else:
-            self.expr = self.ls.head()
+            self.expr = self.list_exprs.head()
             self.continuation = Continuation(ContinuationType.cMapValueOfStep,
-                                             self.ls.tail(), self.env,
+                                             self.list_exprs.tail(), self.env,
                                              self.continuation)
             self.counter = self.eval_value
             return
@@ -648,7 +684,7 @@ class VirtualMachine():
         self.expr = expr
         self.continuation = Continuation(ContinuationType.cEmpty)
         self.counter = self.eval_value
-        self.returnVal = None
+        self.return_val = None
         while self.counter is not None:
             self.counter()
-        return self.returnVal
+        return self.return_val
