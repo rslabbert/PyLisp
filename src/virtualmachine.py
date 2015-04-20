@@ -626,7 +626,8 @@ class VirtualMachine():
 
             # If it's more than, return an error
             elif len(self.args) > len(self.func.args):
-                raise PylispSyntaxError("function {}".format(self.func.value), "Too many arguments")
+                raise PylispSyntaxError("function {}".format(self.func.value),
+                                        "Too many arguments")
 
             # Otherwise, curry the function by setting some of the arguments
             else:
@@ -638,41 +639,23 @@ class VirtualMachine():
 
             return
 
-        # If the function doesn't have a __call__ attr, then it's just a single token i.e. 2
-        # This comes after tokens.function.Function, since that doens't have a
-        # call attr
-        elif not hasattr(self.func, '__call__'):
+        elif isinstance(self.func, tokens.function.Builtin):
+            self.counter = self.eval_continuation
+
+            if len(self.args) == self.func.arg_len or self.func.has_unpack_args:
+                self.values = self.func(*self.args)
+            elif len(self.args) > self.func.arg_len:
+                raise PylispSyntaxError("function {}".format(self.func),
+                                        "Too many arguments")
+            else:
+                self.values = self.func
+                self.values.args += tuple(self.args)
+                self.values.arg_len -= 1
+
+        # Just a single token
+        else:
             self.values = self.func
             self.counter = self.eval_continuation
-
-        # If the function had been previously curried, handle that
-        elif isinstance(self.func, partial):
-            self.counter = self.eval_continuation
-
-            if len(self.args) == self.func.func.__code__.co_argcount - len(
-                self.func.args):
-                self.values = self.func(*self.args)
-
-            elif len(self.args) > self.func.func.__code__.co_argcount - len(
-                self.func.args):
-                raise PylispSyntaxError("function {}".format(self.func.func), "Too many arguments")
-
-            else:
-                func = partial(self.func.func,
-                               *list(self.func.args) + self.args)
-                self.values = func
-
-        # Otherwise it's a builtin function that can be called normally
-        else:
-            self.counter = self.eval_continuation
-
-            if len(self.args) == self.func.__code__.co_argcount or len(
-                self.func.__code__.co_varnames) > self.func.__code__.co_argcount:
-                self.values = self.func(*self.args)
-            elif len(self.args) > self.func.__code__.co_argcount:
-                raise PylispSyntaxError("function {}".format(self.func), "Too many arguments")
-            else:
-                self.values = partial(self.func, *self.args)
 
     def evaluate(self, expr):
         """

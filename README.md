@@ -6,6 +6,7 @@
 * Make optimisations
     * Potentially using flags -O -O2 etc.
     * Can speed up enums https://github.com/ze-phyr-us/fastenum
+* Think about implementing an IO type to make the language more pure
 * Write more tests
 * Implement almost the entire scheme standard
 * Start work on a standard library

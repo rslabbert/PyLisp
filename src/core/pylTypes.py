@@ -1,4 +1,5 @@
 import tokens
+from tokens.function import Builtin
 from functools import partial
 import types
 
@@ -6,36 +7,36 @@ import types
 # Testing for types is in here instead of inside conditionals to keep common elements connected
 # Lambdas are used instead of builtin functions since the argument count
 # can then be accessed which is used for currying
-booleans = {"boolean?": lambda x: isinstance(x, bool), }
+booleans = {"boolean?": Builtin("boolean?", lambda x: isinstance(x, bool)), }
 
-symbols = {"symbol?": lambda x: isinstance(x, tokens.symbol.Symbol), }
+symbols = {"symbol?": Builtin("symbol?", lambda x: isinstance(x, tokens.symbol.Symbol)), }
 
-numbers = {"number?": lambda x: isinstance(x, (int, float)), }
+numbers = {"number?": Builtin("number?", lambda x: isinstance(x, (int, float))), }
 
 functions = {
-    "procedure?": lambda x: isinstance(x, (tokens.function.Function, partial,
+    "procedure?": Builtin("procedure?", lambda x: isinstance(x, (tokens.function.Function, partial,
                                            types.BuiltinFunctionType,
-                                           types.LambdaType)),
+                                           types.LambdaType))),
 }
 
-strings = {"string?": lambda x: isinstance(x, str), }
+strings = {"string?": Builtin("string", lambda x: isinstance(x, str)), }
 
-generic = {"nil?": lambda x: x is None, }
+generic = {"nil?": Builtin("nil?", lambda x: x is None), }
 
 lists = {
-    "list": lambda *x: tokens.lst.Lst(*x),
-    "list?": lambda x: isinstance(x, tokens.lst.Lst),
-    "car": lambda x: x[0],
-    "cdr": lambda x: x[1:],
-    "init": lambda x: x[:-1],
-    "last": lambda x: x[-1],
-    "length": lambda x: len(x),
-    "append": lambda x, y: x + y if isinstance(y, tokens.lst.Lst) else x + [y],
-    "reverse": lambda x: x.reverse(),
-    "take": lambda x, y: y[:x],
-    "index": lambda x, y: y.index(x),
-    "elem?": lambda x, y: x in y,
-    "null?": lambda x: len(x) == 0
+    "list": Builtin("list", lambda *x: tokens.lst.Lst(*x)),
+    "list?": Builtin("list?", lambda x: isinstance(x, tokens.lst.Lst)),
+    "car": Builtin("car", lambda x: x[0]),
+    "cdr": Builtin("cdr", lambda x: x[1:]),
+    "init": Builtin("init", lambda x: x[:-1]),
+    "last": Builtin("last", lambda x: x[-1]),
+    "length": Builtin("length", lambda x: len(x)),
+    "append": Builtin("append", lambda x, y: x + y if isinstance(y, tokens.lst.Lst) else x + [y]),
+    "reverse": Builtin("reverse", lambda x: x.reverse()),
+    "take": Builtin("take", lambda x, y: y[:x]),
+    "index": Builtin("index", lambda x, y: y.index(x)),
+    "elem?": Builtin("elem?", lambda x, y: x in y),
+    "null?": Builtin("null?", lambda x: len(x) == 0)
 }
 
 pyl_types = {}
