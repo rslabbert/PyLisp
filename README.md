@@ -2,7 +2,6 @@
 
 ## TODO
 * Make library use resetEnv with initials properly instead of deepcopy env
-* Make some of the standard library be in pylisp
 * Make optimisations
     * Potentially using flags -O -O2 etc.
     * Can speed up enums https://github.com/ze-phyr-us/fastenum

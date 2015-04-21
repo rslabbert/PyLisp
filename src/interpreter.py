@@ -24,7 +24,6 @@ class Interpreter():
 
         # Sets the global variable environment to the standard set
         self.repl_env = Env()
-        self.repl_env.set_to_standard_env()
 
         self.vm = VirtualMachine(self.repl_env)
         self.registers = None
@@ -46,12 +45,14 @@ class Interpreter():
         atexit.register(readline.write_history_file, self.histfile)
 
     def load_std(self):
-        for k in self.vm.env.stdLibs:
-            to_load = self.vm.env.include_standard_lib(k,
-                                                       self.vm.env.stdLibs[k])
-            for i in to_load:
-                file_parse = FileParser(i, self.vm)
-                file_parse.run()
+        for i in self.vm.env.standard_env:
+            libs = self.vm.env.include_lib(i)
+            for lib in libs:
+                if lib[0] == "py":
+                    self.vm.env.update(lib[1])
+                elif lib[0] == "pyl":
+                    file_parse = FileParser(lib[1], self.vm)
+                    file_parse.run()
 
     def complete(self, text, state):
         """

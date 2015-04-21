@@ -2,6 +2,8 @@ from core import libs
 from tokens.pylsyntax import PylSyntax
 from inspect import getfile
 import os
+import sys
+from importlib.machinery import SourceFileLoader
 
 
 class Env(dict):
@@ -17,45 +19,48 @@ class Env(dict):
         self.update(secEnv)
 
         # The standard library will be in PyLisp/std
-        self.stdPath = os.path.join(
+        self.std_path = os.path.join(
             os.path.dirname(os.path.dirname(getfile(Env))), "lib")
-        self.stdLibs = {}
+        self.std_libs = {}
+        self.get_libs()
+        self.standard_env = ["core", "functions"]
 
-        for lib in os.listdir(self.stdPath):
-            self.stdLibs[lib.split(".")[0]] = os.path.join(self.stdPath, lib)
+    def get_libs(self):
+        for dirs in os.listdir(self.std_path):
+            if os.path.isdir(os.path.join(self.std_path, dirs)) and not dirs.startswith("__"):
+                self.std_libs.update({os.path.basename(dirs): os.path.join(self.std_path, dirs)})
 
-    def set_to_standard_env(self):
-        """
-        Sets the standard environment which contains all the default and language specific symbols
-        """
-        self.include_builtin_lib("arithmetic")
-        self.include_builtin_lib("condition")
-        self.include_builtin_lib("types")
+    def get_lib(self, path):
+        return_list = [] 
+        for root, dirs, files in os.walk(path):
+            for i in files:
+                if i.endswith(".py") and not i.endswith("__init__.py"):
+                    return_list.append(os.path.join(root, i).replace(self.std_path + "/", ""))
+                elif i.endswith(".pyl"):
+                    return_list.append(os.path.join(root, i))
 
-    def include_builtin_lib(self, lib):
-        """
-        Searches for the provided lib in the lib lookup table, and if found inserts it into the environment otherwise returns false
-        """
-        val = libs.libs.get(lib)
-        if val is not None:
-            self.update(val)
+        return return_list
+
+    def include_lib(self, lib):
+        path = self.std_libs.get(lib)
+        if path is None:
+            return PylSyntax.sNil
         else:
-            return False
+            ret = []
+            for val in self.get_lib(path):
+                if val.endswith(".py"):
+                    pf = SourceFileLoader(lib, os.path.join(self.std_path, val))
+                    try:
+                        module = pf.load_module()
+                        if hasattr(module, "export"):
+                            ret.append(("py", module.export))
+                    except:
+                        print("Module", lib, "does not export anything")
+                        ret.append(("None", "No Export"))
+                elif val.endswith(".pyl"):
+                    ret.append(("pyl", val))
 
-    def include_standard_lib(self, lib, path):
-        """
-        Searches for the provided lib in the lib lookup table, and if found inserts it into the environment otherwise returns false
-        """
-        retList = []
-        if os.path.isdir(path):
-            for root, dirs, files in os.walk(path):
-                for i in files:
-                    if i.endswith(".pyl"):
-                        retList.append(os.path.join(root, i))
-        else:
-            retList.append(path)
-
-        return retList
+            return ret
 
     def set(self, keys, vals):
         """

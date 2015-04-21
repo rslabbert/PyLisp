@@ -18,7 +18,6 @@ def main():
         from env import Env
 
         env = Env()
-        env.set_to_standard_env()
 
         parser = FileParser(sys.argv[1], VirtualMachine(env))
         parser.load_std()

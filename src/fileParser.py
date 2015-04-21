@@ -16,15 +16,18 @@ class FileParser():
         self.to_read = os.path.abspath(toRead)
         os.chdir(os.path.dirname(self.to_read))
 
+
     def load_std(self):
         to_read = self.to_read
-        for k in self.vm.env.stdLibs:
-            to_load = self.vm.env.include_standard_lib(k,
-                                                       self.vm.env.stdLibs[k])
-            for i in to_load:
-                self.to_read = i
-                os.chdir(os.path.dirname(self.to_read))
-                self.run()
+        for i in self.vm.env.standard_env:
+            libs = self.vm.env.include_lib(i)
+            for lib in libs:
+                if lib[0] == "py":
+                    self.vm.env.update(lib[1])
+                elif lib[0] == "pyl":
+                    self.to_read = lib[1]
+                    os.chdir(os.path.dirname(self.to_read))
+                    self.run()
 
         self.to_read = to_read
         os.chdir(os.path.dirname(self.to_read))

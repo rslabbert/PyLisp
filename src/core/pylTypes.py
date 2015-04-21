@@ -31,7 +31,7 @@ lists = {
     "init": Builtin("init", lambda x: x[:-1]),
     "last": Builtin("last", lambda x: x[-1]),
     "length": Builtin("length", lambda x: len(x)),
-    "append": Builtin("append", lambda x, y: x + y if isinstance(y, tokens.lst.Lst) else x + [y]),
+    "append": Builtin("append", lambda x, y: x + y if isinstance(y, tokens.lst.Lst) else x + Lst(y)),
     "reverse": Builtin("reverse", lambda x: x.reverse()),
     "take": Builtin("take", lambda x, y: y[:x]),
     "index": Builtin("index", lambda x, y: y.index(x)),

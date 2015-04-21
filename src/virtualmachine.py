@@ -8,6 +8,7 @@ from env import Env
 from copy import deepcopy, copy
 from functools import partial
 import fileparser
+import os
 
 core_keywords = ["define", "begin", "lambda", "let", "do", "if", "set!",
                  "library", "import", "export", "cond", "load"]
@@ -293,7 +294,7 @@ class VirtualMachine():
                     return
                 elif sym == "load":
                     self.continuation = Continuation(ContinuationType.cLoad,
-                                                     self.expr[1].value,
+                                                     self.expr[1].value + ".pyl",
                                                      self.continuation)
 
                     self.expr = None
@@ -526,18 +527,25 @@ class VirtualMachine():
 
             val = env.get(name)
             if val == tokens.pylsyntax.PylSyntax.sNil:
-                val = lib_env.include_builtin_lib(name)
-                if val is False:
-                    val = lib_env.include_standard_lib(name,
-                                                       lib_env.stdLibs[name])
-                    if val is False:
-                        raise LibraryNotFound(name)
-                    else:
-                        for i in val:
-                            self.continuation = Continuation(
-                                ContinuationType.cLoad, i.split(".")[0],
-                                self.continuation)
-                            return
+                vals = lib_env.include_lib(name)
+                for lib in vals:
+                    if not lib == tokens.pylsyntax.PylSyntax.sNil:
+                        if lib[0] == "py":
+                            self.env.update(lib[1])
+                        elif lib[0] == "pyl":
+                            self.continuation = Continuation(ContinuationType.cLoad, lib[1], self.continuation)
+                # val = lib_env.include_builtin_lib(name)
+                # if val is False:
+                    # val = lib_env.include_standard_lib(name,
+                                                       # lib_env.stdLibs[name])
+                    # if val is None:
+                        # raise LibraryNotFound(name)
+                    # else:
+                        # for i in val:
+                            # self.continuation = Continuation(
+                                # ContinuationType.cLoad, i.split(".")[0],
+                                # self.continuation)
+                            # return
             else:
                 lib_env = val
 
@@ -571,9 +579,8 @@ class VirtualMachine():
             k = self.continuation[2]
 
             env = Env()
-            env.set_to_standard_env()
 
-            file_parse = fileparser.FileParser(name + ".pyl",
+            file_parse = fileparser.FileParser(name,
                                                VirtualMachine(env))
             file_parse.run()
 

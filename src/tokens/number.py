@@ -14,4 +14,4 @@ class Number(Token):
         Token.__init__(self, value)
 
     def __repr__(self):
-        return self.value
+        return str(self.value)
