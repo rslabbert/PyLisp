@@ -1,4 +1,3 @@
-from core import libs
 from tokens.pylsyntax import PylSyntax
 from inspect import getfile
 import os
@@ -23,7 +22,7 @@ class Env(dict):
             os.path.dirname(os.path.dirname(getfile(Env))), "lib")
         self.std_libs = {}
         self.get_libs()
-        self.standard_env = ["core", "functions"]
+        self.standard_env = ["core"]
 
     def get_libs(self):
         for dirs in os.listdir(self.std_path):
@@ -44,7 +43,7 @@ class Env(dict):
     def include_lib(self, lib):
         path = self.std_libs.get(lib)
         if path is None:
-            return PylSyntax.sNil
+            return []
         else:
             ret = []
             for val in self.get_lib(path):
