@@ -58,9 +58,9 @@ class Lst(Token, list):
             return result
 
     def __repr__(self):
-        string = "("
+        string = ""
         for i in self:
             string += str(i) + " "
-        string = string[:-1] + ")"
+        string = "(" + string[:].strip() + ")"
 
         return string

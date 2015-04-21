@@ -1,6 +1,8 @@
 # PyLisp
 
 ## TODO
+* Add a case structure
+* Add support for negative numbers
 * Make library use resetEnv with initials properly instead of deepcopy env
 * Make optimisations
     * Potentially using flags -O -O2 etc.
@@ -9,6 +11,7 @@
 * Write more tests
 * Implement almost the entire scheme standard
 * Start work on a standard library
+* Implement a macro expander system
 
 ## Usage
 To run pylisp you can execute the `bin/pylisp` shell file, assuming sh/bash/zsh/etc. is installed, otherwise running python3 main.py works too.

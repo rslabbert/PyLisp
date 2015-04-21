@@ -169,7 +169,7 @@ class Parser:
             token_list.extend(parsed) if isinstance(
                 parsed, list) else token_list.append(parsed)
 
-        if token_list == [] or token_list == [None]:
+        if len(token_list) == 0 or token_list == tokens.lst.Lst(None):
             return tokens.string.String("")
 
         result, _ = self.create_syntax_tree(token_list)

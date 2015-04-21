@@ -139,7 +139,12 @@ class VirtualMachine():
         elif isinstance(self.expr, Lst):
             # If the first item is a core keyword and hasn't been shadowed by a
             # user defined function
-            if (isinstance(self.expr.head(), tokens.symbol.Symbol) and
+            if len(self.expr) == 0:
+                self.values = None
+                self.expr = None
+                self.counter = self.eval_continuation
+                return
+            elif (isinstance(self.expr.head(), tokens.symbol.Symbol) and
                 self.expr.head().value in core_keywords and self.env.get(
                     self.expr.head().value, "notShadowed") == "notShadowed"):
 
@@ -159,7 +164,7 @@ class VirtualMachine():
                     # If body is None, then the lambda doesn't have arguments,
                     # so make the body the arguments
                     if body is None:
-                        self.values = tokens.function.Function("lambda", [],
+                        self.values = tokens.function.Function("lambda", Lst(),
                                                                args, Env())
                     else:
                         self.values = tokens.function.Function("lambda", args,
@@ -293,9 +298,9 @@ class VirtualMachine():
                     self.counter = self.eval_value
                     return
                 elif sym == "load":
-                    self.continuation = Continuation(ContinuationType.cLoad,
-                                                     self.expr[1].value + ".pyl",
-                                                     self.continuation)
+                    self.continuation = Continuation(
+                        ContinuationType.cLoad, self.expr[1].value + ".pyl",
+                        self.continuation)
 
                     self.expr = None
                     return
@@ -533,19 +538,9 @@ class VirtualMachine():
                         if lib[0] == "py":
                             self.env.update(lib[1])
                         elif lib[0] == "pyl":
-                            self.continuation = Continuation(ContinuationType.cLoad, lib[1], self.continuation)
-                # val = lib_env.include_builtin_lib(name)
-                # if val is False:
-                    # val = lib_env.include_standard_lib(name,
-                                                       # lib_env.stdLibs[name])
-                    # if val is None:
-                        # raise LibraryNotFound(name)
-                    # else:
-                        # for i in val:
-                            # self.continuation = Continuation(
-                                # ContinuationType.cLoad, i.split(".")[0],
-                                # self.continuation)
-                            # return
+                            self.continuation = Continuation(
+                                ContinuationType.cLoad, lib[1],
+                                self.continuation)
             else:
                 lib_env = val
 
@@ -580,8 +575,7 @@ class VirtualMachine():
 
             env = Env()
 
-            file_parse = fileparser.FileParser(name,
-                                               VirtualMachine(env))
+            file_parse = fileparser.FileParser(name, VirtualMachine(env))
             file_parse.run()
 
             self.env.update(file_parse.vm.env)
@@ -613,8 +607,9 @@ class VirtualMachine():
         Evaluates a function. Makes a distinction between PyLisp functions, builtins, and partials
         """
 
-        if not isinstance(self.args, Lst):
-            self.args = Lst(self.args)
+        # Handle () as an argument
+        if len(Lst(*filter(lambda x: x is not None, self.args))) == 0:
+            self.args = Lst()
 
         # A function defined in PyLisp
         if isinstance(self.func, tokens.function.Function):
