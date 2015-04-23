@@ -1,6 +1,7 @@
 # PyLisp
 
 ## TODO
+* Make begin have its own environment
 * Add a case structure
 * Add support for negative numbers
 * Make library use resetEnv with initials properly instead of deepcopy env
