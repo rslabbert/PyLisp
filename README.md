@@ -1,9 +1,8 @@
 # PyLisp
 
 ## TODO
-* Make begin have its own environment
+* Parse_cons isn't good, implement it using a macro expander or something
 * Add a case structure
-* Add support for negative numbers
 * Make library use resetEnv with initials properly instead of deepcopy env
 * Make optimisations
     * Potentially using flags -O -O2 etc.

@@ -68,9 +68,11 @@ class Parser:
                 elif c == "[":
                     return [tokens.lst.ListStart(),
                             tokens.symbol.Symbol("list")]
-                elif c.isalpha() or self.is_operator(c):
+                elif c == "." and buf[i + 1].isspace():
+                    return tokens.lst.Cons()
+                elif c.isalpha() or (self.is_operator(c) and not buf[i + 1].isdigit()):
                     self.state = State.symbol
-                elif c.isdigit():
+                elif c.isdigit() or (c == "-" and buf[i + 1].isdigit()):
                     self.state = State.num
 
             # Parses a string
@@ -150,6 +152,23 @@ class Parser:
 
         return tree if len(tree) > 1 else (tree[0] if len(tree) > 0 else []), i
 
+    def parse_cons(self, data):
+        i = 0
+        while i < len(data):
+            # Parses a literal
+            if isinstance(data[i], tokens.lst.Lst):
+                return_val = self.parse_cons(data[i])
+                data[i] = return_val
+            elif isinstance(data[i], tokens.lst.Cons):
+                data[i] = tokens.lst.Lst(tokens.symbol.Symbol("cons"), data[i - 1], data[i + 1])
+                del data[i + 1]
+                del data[i - 1]
+                i -= 2
+
+            i += 1
+
+        return data
+
     def parse_buffer(self, buf):
         """
         Applies the parseToken function until the entire buffer is parsed, at which point it returns a syntax tree
@@ -173,4 +192,5 @@ class Parser:
             return tokens.string.String("")
 
         result, _ = self.create_syntax_tree(token_list)
+        result = self.parse_cons(result)
         return result

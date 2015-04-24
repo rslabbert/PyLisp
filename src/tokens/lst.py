@@ -1,22 +1,25 @@
 from tokens.token import Token
 
 
-class ListStart(Token):
+class ListStart():
     """
     Used for parsing to singal the start of a list
     """
-
-    def __init__(self):
-        Token.__init__(self)
+    pass
 
 
-class ListEnd(Token):
+class ListEnd():
     """
     Used for parsing to singal the end of a list
     """
+    pass
 
-    def __init__(self):
-        Token.__init__(self)
+
+class Cons():
+    """
+    Used for parsing to singal the end of a list
+    """
+    pass
 
 
 class Lst(Token, list):
