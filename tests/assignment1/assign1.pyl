@@ -1,0 +1,8 @@
+(import io)
+
+(define (load-stations file) (slurp file))
+
+(define (load-dates stations)
+  (map car (map split (take 200 (slurp (+ (car stations) ".txt"))))))
+
+(displayln (load-dates (load-stations "stations.txt")))

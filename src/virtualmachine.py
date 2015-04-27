@@ -189,9 +189,8 @@ class VirtualMachine():
 
                     # Extract all the bindings, to then evaluate the right side
                     # and assign it to the left
-                    bind_cursor = bindings
-                    bind_left = Lst(*[x.head() for x in bind_cursor])
-                    bind_right = Lst(*[x.tail() for x in bind_cursor])
+                    bind_left = Lst(*[x.head() for x in bindings])
+                    bind_right = Lst(*[x[1] for x in bindings])
 
                     self.list_exprs = bind_right
                     self.continuation = Continuation(ContinuationType.cLet,

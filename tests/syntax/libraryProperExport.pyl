@@ -1,0 +1,11 @@
+(library (test)
+         (export oneMore)
+
+         (define (square x) (* x x))
+         (define (cube x) (* (square x) x))
+         (define (oneMore x) (* (cube x) x)))
+
+(import test)
+(import io)
+(display (= 16 (oneMore 2)))
+(newline)
