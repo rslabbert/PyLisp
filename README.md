@@ -1,7 +1,6 @@
 # PyLisp
 
 ## TODO
-* Consider reimplementing map as a native function, since it gets really slow with large datasets
 * Parse_cons isn't good, implement it using a macro expander or something
 * Add a case structure
 * Make library use resetEnv with initials properly instead of deepcopy env

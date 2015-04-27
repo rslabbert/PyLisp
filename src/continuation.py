@@ -24,6 +24,7 @@ class ContinuationType(Enum):
     cDefine = 14
     cCond = 15
     cLoad = 16
+    cMapFunction = 17
 
 
 class Continuation(Lst):
