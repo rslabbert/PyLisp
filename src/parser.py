@@ -192,5 +192,8 @@ class Parser:
             return tokens.string.String("")
 
         result, _ = self.create_syntax_tree(token_list)
-        result = self.parse_cons(result)
+
+        if isinstance(result, tokens.lst.Lst):
+            result = self.parse_cons(result)
+
         return result

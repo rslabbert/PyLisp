@@ -2,6 +2,7 @@ import tokens
 from errors.symbolnotfound import SymbolNotFound
 from errors.syntaxerror import PylispSyntaxError
 from errors.librarynotfound import LibraryNotFound
+from errors.pylisptypeerror import PylispTypeError
 from tokens.lst import Lst
 from continuation import Continuation, ContinuationType
 from env import Env
@@ -644,7 +645,11 @@ class VirtualMachine():
             self.counter = self.eval_continuation
 
             if len(self.args) == self.func.arg_len or self.func.has_unpack_args:
-                self.values = self.func(*self.args)
+                try:
+                    self.values = self.func(*self.args)
+                except TypeError:
+                    raise PylispTypeError(self.func, *self.args)
+
             elif len(self.args) > self.func.arg_len:
                 raise PylispSyntaxError("function {}".format(self.func),
                                         "Too many arguments")
@@ -654,9 +659,12 @@ class VirtualMachine():
                 self.values.arg_len -= 1
 
         # Just a single token
+        elif len(self.args) > 0:
+            raise PylispTypeError(self.func, *self.args, msg=" because {} is not a function".format(self.func))
         else:
             self.values = self.func
             self.counter = self.eval_continuation
+
 
     def evaluate(self, expr):
         """
