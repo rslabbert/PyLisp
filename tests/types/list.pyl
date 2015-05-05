@@ -1,14 +1,14 @@
 (import io)
 
 ; Test using lists as arguments
-(define r (list (1 2)))
+(define r (list 1 2))
 
-(define test-list (list(
+(define test-list (list 
                         (list? r)
                         (= (list 3 5 9) (list (+ 1 2) (+ 2 3) (+ 4 5)))
                         (= 1 (car (list 1 2 3)))
                         (= (list 2 3) (cdr (list 1 2 3)))
-                        )))
+                        ))
 
 (display (not (elem? #f test-list)))
 (newline)
