@@ -5,7 +5,7 @@ from os.path import expanduser, join
 
 from env import Env
 from parser import Parser
-from virtualmachine import VirtualMachine, core_keywords
+from virtualmachine import VirtualMachine
 from fileparser import FileParser
 from errors.pylisperror import PylispError
 
@@ -61,7 +61,7 @@ class Interpreter():
         if state == 0:
             self.completion_candidates = []
 
-            for i in list(self.repl_env.keys()) + core_keywords:
+            for i in list(self.repl_env.keys()) + self.vm.core_keywords:
                 if i.startswith(text):
                     self.completion_candidates.append(i)
 

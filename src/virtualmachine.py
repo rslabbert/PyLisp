@@ -10,9 +10,6 @@ from functools import partial
 import fileparser
 import os
 
-core_keywords = ["define", "begin", "lambda", "let", "do", "if", "set!",
-                 "library", "import", "export", "cond", "load"]
-
 
 class VirtualMachine():
     """
@@ -68,6 +65,20 @@ class VirtualMachine():
         # tokens.number.Number)
         self.env = env
 
+        self.core_keywords = {
+            "define": self.sDefine,
+            "begin": self.sBegin,
+            "lambda": self.sLambda,
+            "let": self.sLet,
+            "if": self.sIf,
+            "set!": self.sDefine,
+            "library": self.sLibrary,
+            "import": self.sImport,
+            "export": self.sExport,
+            "cond": self.sCond,
+            "load": self.sLoad
+        }
+
     def get_registers(self):
         """
         Returns all the registers
@@ -116,7 +127,7 @@ class VirtualMachine():
         # and it is not a core keyword raise an error, otherwise return it
         elif isinstance(self.expr, tokens.symbol.Symbol):
             val = self.env.get(self.expr.value)
-            if val == tokens.pylsyntax.PylSyntax.sNil and val not in core_keywords:
+            if val == tokens.pylsyntax.PylSyntax.sNil and val not in self.core_keywords.keys():
                 raise SymbolNotFound(self.expr.value)
 
             self.values = val
@@ -145,165 +156,152 @@ class VirtualMachine():
                 self.counter = self.eval_continuation
                 return
             elif (isinstance(self.expr.head(), tokens.symbol.Symbol) and
-                  self.expr.head().value in core_keywords and self.env.get(
+                  self.expr.head().value in self.core_keywords.keys() and self.env.get(
                       self.expr.head().value, "notShadowed") == "notShadowed"):
-
                 sym = self.expr.head().value
-
-                if sym == "lambda":
-                    if len(self.expr) > 3:
-                        raise PylispSyntaxError(
-                            "lambda",
-                            "Too many expressions, only arguments and body allowed")
-                    elif len(self.expr) < 3:
-                        raise PylispSyntaxError("lambda",
-                                                "Argument and/or body needed")
-
-                    args = self.expr[1]
-                    body = self.expr[2]
-
-                    self.values = tokens.function.Function("lambda", args,
-                                                           body, Env())
-
-                    self.counter = self.eval_continuation
-                    return
-
-                elif sym == "let":
-                    if len(self.expr) < 3:
-                        raise PylispSyntaxError("let",
-                                                "Less than two expressions")
-                    bindings = self.expr[1]
-                    body = self.expr[2]
-
-                    # If there isn't a body then there are no bindings, so
-                    # shift everything
-                    if body is None:
-                        self.expr = bindings
-                        self.counter = self.eval_continuation
-                        return
-
-                    # Extract all the bindings, to then evaluate the right side
-                    # and assign it to the left
-                    bind_left = Lst(*[x.head() for x in bindings])
-                    bind_right = Lst(*[x[1] for x in bindings])
-
-                    self.list_exprs = bind_right
-                    self.continuation = Lst(self.cLet, body, bind_left,
-                                            self.continuation)
-                    self.counter = self.eval_map_value
-                    return
-
-                elif sym == "begin":
-                    if self.expr.tail() is None:
-                        self.values = None
-                        self.counter = self.eval_continuation
-                        return
-
-                    self.list_exprs = self.expr.tail()
-                    self.continuation = Lst(self.cBegin, self.continuation)
-                    self.counter = self.eval_map_value
-                    return
-
-                elif sym == "if":
-                    if len(self.expr) > 4:
-                        raise PylispSyntaxError(
-                            "if",
-                            "Too many expressions, only condition, true and false allowed")
-                    elif len(self.expr) < 4:
-                        raise PylispSyntaxError("if",
-                                                "No true and/or false responses")
-
-                    self.continuation = Lst(self.cIf, self.expr[2],
-                                            self.expr[3], self.continuation)
-                    self.expr = self.expr[1]
-                    self.counter = self.eval_value
-                    return
-
-                elif sym == "define" or sym == "set!":
-                    if not len(self.expr) == 3:
-                        raise PylispSyntaxError(
-                            sym,
-                            "Wrong number of expressions, only name and value allowed")
-
-                    # If expr[1] is a Lst, then it's a function definition
-                    if isinstance(self.expr[1], Lst):
-                        name = self.expr[1].head()
-                        self.values = tokens.function.Function(
-                            name, self.expr[1].tail(), self.expr[2], Env())
-                        self.counter = self.eval_continuation
-                    else:
-                        name = self.expr[1]
-                        self.expr = self.expr[2]
-                        self.counter = self.eval_value
-
-                    # Define and set are dealt with individually since set!
-                    # cannot change a variable which does not exist
-                    if sym == "define":
-                        self.continuation = Lst(self.cDefine, name,
-                                                self.continuation)
-                    elif sym == "set!":
-                        self.continuation = Lst(self.cSet, name,
-                                                self.continuation)
-                    return
-
-                elif sym == "library":
-                    if len(self.expr) < 2:
-                        raise PylispSyntaxError("library", "No name provided")
-                    name = self.expr[1][0].value
-                    self.expr = self.expr[2:]
-
-                    self.continuation = Lst(self.cLibrary, name,
-                                            deepcopy(self.env),
-                                            self.continuation)
-                    self.counter = self.eval_value
-                    return
-
-                elif sym == "import":
-                    if len(self.expr) < 2:
-                        raise PylispSyntaxError("import", "No to import provided")
-                    name = self.expr[1].value
-                    self.continuation = Lst(self.cImport, name,
-                                            self.continuation)
-                    self.expr = None
-                    self.counter = self.eval_continuation
-                    return
-
-                elif sym == "export":
-                    if len(self.expr) < 2:
-                        raise PylispSyntaxError("export", "Nothing to export provided")
-                    if not self.export:
-                        self.export = [self.expr[1].value]
-                    else:
-                        self.export.append(self.expr[1].value)
-                    self.counter = self.eval_continuation
-                    return
-
-                elif sym == "cond":
-                    if len(self.expr) < 2:
-                        raise PylispSyntaxError("cond", "At least one test needs to be provided")
-                    exprs = self.expr[1:]
-                    conds = Lst(*[x.head() for x in exprs])
-                    rets = Lst(*[x.tail() for x in exprs])
-
-                    self.expr = conds.head()
-                    self.continuation = Lst(self.cCond, conds.tail(), rets,
-                                            self.continuation)
-                    self.counter = self.eval_value
-                    return
-                elif sym == "load":
-                    if len(self.expr) < 2:
-                        raise PylispSyntaxError("load", "Nothing to load provided")
-                    self.continuation = Lst(self.cLoad,
-                                            self.expr[1].value + ".pyl",
-                                            self.continuation)
-
-                    self.expr = None
-                    return
+                result = self.core_keywords.get(sym, self.sElse)
+                result()
             else:
-                self.continuation = Lst(self.cProcFunc, self.expr.tail(),
-                                        self.continuation)
-                self.expr = self.expr.head()
-                return
+                self.sElse()
+
+
+    def sLambda(self):
+        if len(self.expr) > 3:
+            raise PylispSyntaxError(
+                "lambda",
+                "Too many expressions, only arguments and body allowed")
+        elif len(self.expr) < 3:
+            raise PylispSyntaxError("lambda", "Argument and/or body needed")
+
+        args = self.expr[1]
+        body = self.expr[2]
+
+        self.values = tokens.function.Function("lambda", args, body, Env())
+
+        self.counter = self.eval_continuation
+
+    def sLet(self):
+        if len(self.expr) < 3:
+            raise PylispSyntaxError("let", "Less than two expressions")
+        bindings = self.expr[1]
+        body = self.expr[2]
+
+        # If there isn't a body then there are no bindings, so
+        # shift everything
+        if body is None:
+            self.expr = bindings
+            self.counter = self.eval_continuation
+            return
+
+        # Extract all the bindings, to then evaluate the right side
+        # and assign it to the left
+        bind_left = Lst(*[x.head() for x in bindings])
+        bind_right = Lst(*[x[1] for x in bindings])
+
+        self.list_exprs = bind_right
+        self.continuation = Lst(self.cLet, body, bind_left, self.continuation)
+        self.counter = self.eval_map_value
+
+    def sBegin(self):
+        if self.expr.tail() is None:
+            self.values = None
+            self.counter = self.eval_continuation
+            return
+
+        self.list_exprs = self.expr.tail()
+        self.continuation = Lst(self.cBegin, self.continuation)
+        self.counter = self.eval_map_value
+
+    def sIf(self):
+        if len(self.expr) > 4:
+            raise PylispSyntaxError(
+                "if",
+                "Too many expressions, only condition, true and false allowed")
+        elif len(self.expr) < 4:
+            raise PylispSyntaxError("if", "No true and/or false responses")
+
+        self.continuation = Lst(self.cIf, self.expr[2], self.expr[3],
+                                self.continuation)
+        self.expr = self.expr[1]
+        self.counter = self.eval_value
+
+    def sDefine(self):
+        sym = self.expr.head().value
+        if not len(self.expr) == 3:
+            raise PylispSyntaxError(
+                sym,
+                "Wrong number of expressions, only name and value allowed")
+
+        # If expr[1] is a Lst, then it's a function definition
+        if isinstance(self.expr[1], Lst):
+            name = self.expr[1].head()
+            self.values = tokens.function.Function(name, self.expr[1].tail(),
+                                                   self.expr[2], Env())
+            self.counter = self.eval_continuation
+        else:
+            name = self.expr[1]
+            self.expr = self.expr[2]
+            self.counter = self.eval_value
+
+        # Define and set are dealt with individually since set!
+        # cannot change a variable which does not exist
+        if sym == "define":
+            self.continuation = Lst(self.cDefine, name, self.continuation)
+        elif sym == "set!":
+            self.continuation = Lst(self.cSet, name, self.continuation)
+
+    def sLibrary(self):
+        if len(self.expr) < 2:
+            raise PylispSyntaxError("library", "No name provided")
+        name = self.expr[1][0].value
+        self.expr = self.expr[2:]
+
+        self.continuation = Lst(self.cLibrary, name, deepcopy(self.env),
+                                self.continuation)
+        self.counter = self.eval_value
+
+    def sImport(self):
+        if len(self.expr) < 2:
+            raise PylispSyntaxError("import", "No to import provided")
+        name = self.expr[1].value
+        self.continuation = Lst(self.cImport, name, self.env, self.continuation)
+        self.expr = None
+        self.counter = self.eval_continuation
+
+    def sExport(self):
+        if len(self.expr) < 2:
+            raise PylispSyntaxError("export", "Nothing to export provided")
+        if not self.export:
+            self.export = [self.expr[1].value]
+        else:
+            self.export.append(self.expr[1].value)
+        self.counter = self.eval_continuation
+
+    def sCond(self):
+        if len(self.expr) < 2:
+            raise PylispSyntaxError("cond",
+                                    "At least one test needs to be provided")
+        exprs = self.expr[1:]
+        conds = Lst(*[x.head() for x in exprs])
+        rets = Lst(*[x.tail() for x in exprs])
+
+        self.expr = conds.head()
+        self.continuation = Lst(self.cCond, conds.tail(), rets,
+                                self.continuation)
+        self.counter = self.eval_value
+
+    def sLoad(self):
+        if len(self.expr) < 2:
+            raise PylispSyntaxError("load", "Nothing to load provided")
+        self.continuation = Lst(self.cLoad, self.expr[1].value + ".pyl",
+                                self.continuation)
+
+        self.expr = None
+
+    def sElse(self):
+        self.continuation = Lst(self.cProcFunc, self.expr.tail(),
+                                self.continuation)
+        self.expr = self.expr.head()
 
     def eval_continuation(self):
         self.continuation[0]()
@@ -400,7 +398,7 @@ class VirtualMachine():
         if self.env.get(symbol.value) == tokens.pylsyntax.PylSyntax.sNil:
             raise SymbolNotFound(symbol.value)
 
-        k = self.continuation[3]
+        k = self.continuation[2]
 
         self.env.set(symbol.value, value)
         self.return_val = value
@@ -487,7 +485,7 @@ class VirtualMachine():
             if isinstance(expr, tokens.function.Function):
                 for j in self.flatten_expression(expr.expr):
                     val = self.env.get(j.value)
-                    if j.value not in core_keywords and val is not tokens.pylsyntax.PylSyntax.sNil and val is not expr:
+                    if j.value not in self.core_keywords.keys() and val is not tokens.pylsyntax.PylSyntax.sNil and val is not expr:
                         if env.get(j.value) == tokens.pylsyntax.PylSyntax.sNil:
                             depends.append((j.value, val))
                             depends += get_dependants(val)
