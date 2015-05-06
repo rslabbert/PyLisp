@@ -1,5 +1,6 @@
 from parser import Parser
 from errors.pylisperror import PylispError
+from errors.filenotfound import FileNotFoundError
 import os
 
 
@@ -14,6 +15,10 @@ class FileParser():
         """
         self.vm = vm
         self.to_read = os.path.abspath(toRead)
+
+        if not os.path.exists(self.to_read):
+            raise FileNotFoundError(self.to_read)
+
         os.chdir(os.path.dirname(self.to_read))
 
 
@@ -88,5 +93,5 @@ class FileParser():
                 parser = Parser()
                 self.vm.evaluate(parser.parse_buffer(i))
             except PylispError as e:
-                print(e, "at line", k)
+                print(os.path.basename(self.to_read) + ":", e, "at line", k)
                 return

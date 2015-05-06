@@ -1,4 +1,5 @@
 import sys
+from errors.pylisperror import PylispError
 
 
 def main():
@@ -27,4 +28,7 @@ def main():
 if __name__ == '__main__':
     # import cProfile
     # cProfile.run('main()')
-    main()
+    try:
+        main()
+    except PylispError as e:
+        print(e)

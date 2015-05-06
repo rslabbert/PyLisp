@@ -152,23 +152,18 @@ class VirtualMachine():
 
                 if sym == "lambda":
                     if len(self.expr) > 3:
-                        raise PylispSyntaxError("lambda",
-                                                "More than two expressions")
+                        raise PylispSyntaxError(
+                            "lambda",
+                            "Too many expressions, only arguments and body allowed")
                     elif len(self.expr) < 3:
                         raise PylispSyntaxError("lambda",
-                                                "Less than two expressions")
+                                                "Argument and/or body needed")
 
                     args = self.expr[1]
                     body = self.expr[2]
 
-                    # If body is None, then the lambda doesn't have arguments,
-                    # so make the body the arguments
-                    if body is None:
-                        self.values = tokens.function.Function("lambda", Lst(),
-                                                               args, Env())
-                    else:
-                        self.values = tokens.function.Function("lambda", args,
-                                                               body, Env())
+                    self.values = tokens.function.Function("lambda", args,
+                                                           body, Env())
 
                     self.counter = self.eval_continuation
                     return
@@ -193,9 +188,8 @@ class VirtualMachine():
                     bind_right = Lst(*[x[1] for x in bindings])
 
                     self.list_exprs = bind_right
-                    self.continuation = Lst(self.cLet, body,
-                                                     bind_left, self.env,
-                                                     self.continuation)
+                    self.continuation = Lst(self.cLet, body, bind_left,
+                                            self.continuation)
                     self.counter = self.eval_map_value
                     return
 
@@ -206,8 +200,7 @@ class VirtualMachine():
                         return
 
                     self.list_exprs = self.expr.tail()
-                    self.continuation = Lst(self.cBegin, self.env,
-                                                     self.continuation)
+                    self.continuation = Lst(self.cBegin, self.continuation)
                     self.counter = self.eval_map_value
                     return
 
@@ -216,13 +209,12 @@ class VirtualMachine():
                         raise PylispSyntaxError(
                             "if",
                             "Too many expressions, only condition, true and false allowed")
-                    elif len(self.expr) < 3:
+                    elif len(self.expr) < 4:
                         raise PylispSyntaxError("if",
-                                                "No true or false responses")
+                                                "No true and/or false responses")
 
                     self.continuation = Lst(self.cIf, self.expr[2],
-                                                     self.expr[3], self.env,
-                                                     self.continuation)
+                                            self.expr[3], self.continuation)
                     self.expr = self.expr[1]
                     self.counter = self.eval_value
                     return
@@ -231,7 +223,7 @@ class VirtualMachine():
                     if not len(self.expr) == 3:
                         raise PylispSyntaxError(
                             sym,
-                            "Too many expressions, only name and value allowed")
+                            "Wrong number of expressions, only name and value allowed")
 
                     # If expr[1] is a Lst, then it's a function definition
                     if isinstance(self.expr[1], Lst):
@@ -248,34 +240,37 @@ class VirtualMachine():
                     # cannot change a variable which does not exist
                     if sym == "define":
                         self.continuation = Lst(self.cDefine, name,
-                                                         self.env,
-                                                         self.continuation)
+                                                self.continuation)
                     elif sym == "set!":
                         self.continuation = Lst(self.cSet, name,
-                                                         self.env,
-                                                         self.continuation)
+                                                self.continuation)
                     return
 
                 elif sym == "library":
+                    if len(self.expr) < 2:
+                        raise PylispSyntaxError("library", "No name provided")
                     name = self.expr[1][0].value
                     self.expr = self.expr[2:]
 
                     self.continuation = Lst(self.cLibrary, name,
-                                                     deepcopy(self.env),
-                                                     self.continuation)
+                                            deepcopy(self.env),
+                                            self.continuation)
                     self.counter = self.eval_value
                     return
 
                 elif sym == "import":
+                    if len(self.expr) < 2:
+                        raise PylispSyntaxError("import", "No to import provided")
                     name = self.expr[1].value
                     self.continuation = Lst(self.cImport, name,
-                                                     self.env,
-                                                     self.continuation)
+                                            self.continuation)
                     self.expr = None
                     self.counter = self.eval_continuation
                     return
 
                 elif sym == "export":
+                    if len(self.expr) < 2:
+                        raise PylispSyntaxError("export", "Nothing to export provided")
                     if not self.export:
                         self.export = [self.expr[1].value]
                     else:
@@ -284,26 +279,29 @@ class VirtualMachine():
                     return
 
                 elif sym == "cond":
+                    if len(self.expr) < 2:
+                        raise PylispSyntaxError("cond", "At least one test needs to be provided")
                     exprs = self.expr[1:]
                     conds = Lst(*[x.head() for x in exprs])
                     rets = Lst(*[x.tail() for x in exprs])
 
                     self.expr = conds.head()
-                    self.continuation = Lst(self.cCond, conds.tail(),
-                                                     rets, self.continuation)
+                    self.continuation = Lst(self.cCond, conds.tail(), rets,
+                                            self.continuation)
                     self.counter = self.eval_value
                     return
                 elif sym == "load":
-                    self.continuation = Lst(
-                        self.cLoad, self.expr[1].value + ".pyl",
-                        self.continuation)
+                    if len(self.expr) < 2:
+                        raise PylispSyntaxError("load", "Nothing to load provided")
+                    self.continuation = Lst(self.cLoad,
+                                            self.expr[1].value + ".pyl",
+                                            self.continuation)
 
                     self.expr = None
                     return
             else:
-                self.continuation = Lst(self.cProcFunc,
-                                                 self.expr.tail(), self.env,
-                                                 self.continuation)
+                self.continuation = Lst(self.cProcFunc, self.expr.tail(),
+                                        self.continuation)
                 self.expr = self.expr.head()
                 return
 
@@ -336,8 +334,7 @@ class VirtualMachine():
         args = self.values
         body = self.continuation[1]
         bind_left = self.continuation[2]
-        env = self.continuation[3]
-        k = self.continuation[4]
+        k = self.continuation[3]
 
         init = {}
 
@@ -354,8 +351,7 @@ class VirtualMachine():
 
     def cBegin(self):
         results = self.values
-        env = self.continuation[1]
-        k = self.continuation[2]
+        k = self.continuation[1]
 
         self.continuation = k
         self.values = results[-1] if self.values is not None else None
@@ -366,12 +362,10 @@ class VirtualMachine():
         condition = self.values
         true = self.continuation[1]
         false = self.continuation[2]
-        env = self.continuation[3]
-        k = self.continuation[4]
+        k = self.continuation[3]
 
         if condition:
             self.expr = true
-            self.env = env
             self.continuation = k
             self.counter = self.eval_value
             return
@@ -382,7 +376,6 @@ class VirtualMachine():
             return
         else:
             self.expr = false
-            self.env = env
             self.continuation = k
             self.counter = self.eval_value
             return
@@ -391,8 +384,7 @@ class VirtualMachine():
         value = self.values
         symbol = self.continuation[1]
 
-        env = self.continuation[2]
-        k = self.continuation[3]
+        k = self.continuation[2]
 
         self.env.set(symbol.value, value)
         self.return_val = value
@@ -408,7 +400,6 @@ class VirtualMachine():
         if self.env.get(symbol.value) == tokens.pylsyntax.PylSyntax.sNil:
             raise SymbolNotFound(symbol.value)
 
-        env = self.continuation[2]
         k = self.continuation[3]
 
         self.env.set(symbol.value, value)
@@ -424,12 +415,10 @@ class VirtualMachine():
     def cProcFunc(self):
         func = self.values
         args = self.continuation[1]
-        env = self.continuation[2]
-        k = self.continuation[3]
+        k = self.continuation[2]
 
         self.list_exprs = args
         self.continuation = Lst(self.cProcArgs, func, k)
-        self.env = env
         self.counter = self.eval_map_value
         return
 
@@ -452,13 +441,10 @@ class VirtualMachine():
     def cMapValueOfStep(self):
         first = self.values
         second = self.continuation[1]
-        env = self.continuation[2]
-        k = self.continuation[3]
+        k = self.continuation[2]
 
         self.list_exprs = second
-        self.env = env
-        self.continuation = Lst(self.cMapValueOfCons,
-                                         first, k)
+        self.continuation = Lst(self.cMapValueOfCons, first, k)
         self.counter = self.eval_map_value
         return
 
@@ -508,15 +494,16 @@ class VirtualMachine():
 
             return depends
 
-        for i in self.export:
-            # Gets all the dependants and adds it to the functions environment
-            if isinstance(self.env[i], tokens.function.Function):
-                for ident, val in get_dependants(self.env[i]):
-                    self.env[i].env.set(ident, val)
+        if self.export:
+            for i in self.export:
+                # Gets all the dependants and adds it to the functions environment
+                if isinstance(self.env[i], tokens.function.Function):
+                    for ident, val in get_dependants(self.env[i]):
+                        self.env[i].env.set(ident, val)
 
-            lib_env.set(i, self.env[i])
+                lib_env.set(i, self.env[i])
 
-        self.export = None
+            self.export = None
 
         env.set(name, lib_env)
         self.env = env
@@ -541,8 +528,8 @@ class VirtualMachine():
                     if lib[0] == "py":
                         self.env.update(lib[1])
                     elif lib[0] == "pyl":
-                        self.continuation = Lst(
-                            self.cLoad, lib[1], self.continuation)
+                        self.continuation = Lst(self.cLoad, lib[1],
+                                                self.continuation)
         else:
             lib_env = val
 
@@ -565,9 +552,8 @@ class VirtualMachine():
             self.continuation = k
         else:
             self.expr = conditions.head()
-            self.continuation = Lst(self.cCond,
-                                             conditions.tail(),
-                                             return_values.tail(), k)
+            self.continuation = Lst(self.cCond, conditions.tail(),
+                                    return_values.tail(), k)
 
         self.counter = self.eval_value
         return
@@ -600,8 +586,7 @@ class VirtualMachine():
         else:
             self.expr = self.list_exprs.head()
             self.continuation = Lst(self.cMapValueOfStep,
-                                             self.list_exprs.tail(), self.env,
-                                             self.continuation)
+                                    self.list_exprs.tail(), self.continuation)
             self.counter = self.eval_value
             return
 
@@ -625,8 +610,8 @@ class VirtualMachine():
                 for k in env.keys():
                     init[k] = self.env.get(k)
                 self.env.update(env)
-                self.continuation = Lst(self.cResetEnv,
-                                                 init, self.continuation)
+                self.continuation = Lst(self.cResetEnv, init,
+                                        self.continuation)
                 self.counter = self.eval_value
 
             # If it's more than, return an error

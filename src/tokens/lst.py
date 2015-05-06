@@ -47,6 +47,12 @@ class Lst(Token, list):
         """
         return self[1:]
 
+    def __add__(self, x):
+        temp = Lst()
+        temp.extend(self)
+        temp.extend(x)
+        return temp
+
     def __getitem__(self, item):
         """
         Overides list's getitem function to make that the value returned is always a Lst or if it is a single value it returns the value

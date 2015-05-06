@@ -1,6 +1,8 @@
 # PyLisp
 
 ## TODO
+* Document everything with doc strings and comments
+* Try to convert eval_value to a dictionary + function call combo and test performance
 * Parse_cons isn't good, implement it using a macro expander or something
 * Add a case structure
 * Make library use resetEnv with initials properly instead of deepcopy env

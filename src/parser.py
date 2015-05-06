@@ -7,7 +7,7 @@ import tokens.nil
 import tokens.number
 import tokens.string
 import tokens.literal
-from errors import syntaxerror
+from errors.syntaxerror import PylispSyntaxError
 
 
 class State(Enum):
@@ -70,7 +70,8 @@ class Parser:
                             tokens.symbol.Symbol("list")]
                 elif c == "." and buf[i + 1].isspace():
                     return tokens.lst.Cons()
-                elif c.isalpha() or (self.is_operator(c) and not buf[i + 1].isdigit()):
+                elif c.isalpha() or (self.is_operator(c) and not
+                                     buf[i + 1].isdigit()):
                     self.state = State.symbol
                 elif c.isdigit() or (c == "-" and buf[i + 1].isdigit()):
                     self.state = State.num
@@ -98,8 +99,11 @@ class Parser:
                 elif c == "(" or c == ")" or c == "[" or c == "]":
                     self.position -= 1
                     return tokens.number.Number(current_token)
-                else:
+                elif c.isdigit() or c == ".":
                     current_token += c
+                else:
+                    raise PylispSyntaxError(current_token + c,
+                                            "Invalid character " + c)
 
         # Handles end of buffer strings not being closed or symbols being at
         # end
@@ -109,8 +113,8 @@ class Parser:
             return tokens.number.Number(current_token)
 
         if self.state == State.string:
-            print("String not closed before newline")
-            return False
+            raise PylispSyntaxError(current_token,
+                                    "String not closed before newline")
 
     def create_syntax_tree(self, data):
         """
@@ -160,7 +164,15 @@ class Parser:
                 return_val = self.parse_cons(data[i])
                 data[i] = return_val
             elif isinstance(data[i], tokens.lst.Cons):
-                data[i] = tokens.lst.Lst(tokens.symbol.Symbol("cons"), data[i - 1], data[i + 1])
+                if i == 0:
+                    raise PylispSyntaxError(data,
+                                            "First item of pair can't be none")
+                if i == len(data) - 1:
+                    raise PylispSyntaxError(data,
+                                            "Last item of pair can't be none")
+
+                data[i] = tokens.lst.Lst(tokens.symbol.Symbol("cons"),
+                                         data[i - 1], data[i + 1])
                 del data[i + 1]
                 del data[i - 1]
                 i -= 2
@@ -175,7 +187,7 @@ class Parser:
         """
 
         if not buf.count("(") == buf.count(")"):
-            raise syntaxerror.PylispSyntaxError(
+            raise PylispSyntaxError(
                 buf, "Opening brackets do not match closing brackets")
 
         self.position = 0
