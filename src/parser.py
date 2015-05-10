@@ -3,12 +3,17 @@ from enum import Enum
 import tokens.function
 import tokens.lst
 import tokens.symbol
-import tokens.nil
 import tokens.number
 import tokens.string
 import tokens.literal
 from errors.syntaxerror import PylispSyntaxError
 
+
+class ParserTokens(Enum):
+    lstStart = 0
+    lstEnd = 1
+    cons = 2
+    literalStart = 3
 
 class State(Enum):
     """
@@ -56,20 +61,20 @@ class Parser:
             # Sets the initial State
             if self.state == State.nil:
                 if c == "'":
-                    return tokens.literal.LiteralStart()
+                    return ParserTokens.literalStart
                 elif c == ";":
                     self.state = State.comment
                 elif c == '"':
                     self.state = State.string
                 elif c == "(":
-                    return tokens.lst.ListStart()
+                    return ParserTokens.lstStart
                 elif c == ")" or c == "]":
-                    return tokens.lst.ListEnd()
+                    return ParserTokens.lstEnd
                 elif c == "[":
-                    return [tokens.lst.ListStart(),
+                    return [ParserTokens.lstStart,
                             tokens.symbol.Symbol("list")]
                 elif c == "." and buf[i + 1].isspace():
-                    return tokens.lst.Cons()
+                    return ParserTokens.cons
                 elif c.isalpha() or (self.is_operator(c) and not
                                      buf[i + 1].isdigit()):
                     self.state = State.symbol
@@ -99,7 +104,7 @@ class Parser:
                 elif c == "(" or c == ")" or c == "[" or c == "]":
                     self.position -= 1
                     return tokens.number.Number(current_token)
-                elif c.isdigit() or c == ".":
+                elif c.isdigit() or (c == "." and "." not in current_token):
                     current_token += c
                 else:
                     raise PylispSyntaxError(current_token + c,
@@ -124,8 +129,8 @@ class Parser:
         i = 0
         while i < len(data):
             # Parses a literal
-            if isinstance(data[i], tokens.literal.LiteralStart):
-                if isinstance(data[i + 1], tokens.lst.ListStart):
+            if data[i] == ParserTokens.literalStart:
+                if data[i + 1] == ParserTokens.lstStart:
                     self.state = State.literal
                     return_val, j = self.create_syntax_tree(data[i + 2:])
                     self.state = State.nil
@@ -136,13 +141,13 @@ class Parser:
                     i += 1
 
             # Parses a list
-            elif isinstance(data[i], tokens.lst.ListStart):
+            elif data[i] == ParserTokens.lstStart:
                 return_val, j = self.create_syntax_tree(data[i + 1:])
                 i += j
                 tree.append(return_val)
 
             # End a list
-            elif isinstance(data[i], tokens.lst.ListEnd):
+            elif data[i] == ParserTokens.lstEnd:
                 return tree, i + 1
 
             # Normal character
@@ -163,7 +168,7 @@ class Parser:
             if isinstance(data[i], tokens.lst.Lst):
                 return_val = self.parse_cons(data[i])
                 data[i] = return_val
-            elif isinstance(data[i], tokens.lst.Cons):
+            elif data[i] == ParserTokens.cons:
                 if i == 0:
                     raise PylispSyntaxError(data,
                                             "First item of pair can't be none")
@@ -188,7 +193,11 @@ class Parser:
 
         if not buf.count("(") == buf.count(")"):
             raise PylispSyntaxError(
-                buf, "Opening brackets do not match closing brackets")
+                buf, "Opening () brackets do not match closing brackets")
+
+        if not buf.count("[") == buf.count("]"):
+            raise PylispSyntaxError(
+                buf, "Opening [] brackets do not match closing brackets")
 
         self.position = 0
         self.state = None

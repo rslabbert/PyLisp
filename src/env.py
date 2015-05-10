@@ -54,7 +54,6 @@ class Env(dict):
                         if hasattr(module, "export"):
                             ret.append(("py", module.export))
                     except:
-                        print("Module", lib, "does not export anything")
                         ret.append(("None", "No Export"))
                 elif val.endswith(".pyl"):
                     ret.append(("pyl", val))

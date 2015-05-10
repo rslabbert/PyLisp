@@ -27,8 +27,8 @@ def main():
 
 if __name__ == '__main__':
     try:
-        import cProfile
-        cProfile.run('main()')
-        # main()
+        # import cProfile
+        # cProfile.run('main()')
+        main()
     except PylispError as e:
         print(e)

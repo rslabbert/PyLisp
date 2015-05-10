@@ -1,51 +1,18 @@
 from tokens.token import Token
 
 
-class ListStart():
-    """
-    Used for parsing to singal the start of a list
-    """
-    pass
-
-
-class ListEnd():
-    """
-    Used for parsing to singal the end of a list
-    """
-    pass
-
-
-class Cons():
-    """
-    Used for parsing to singal the end of a list
-    """
-    pass
-
-
 class Lst(Token, list):
     """
     Replaces the use of list in the virtual machine
     """
 
-    def __init__(self, *secList):
+    def __init__(self, *sec_list):
         """
         secList is provided to initialise the lst with values
         """
         Token.__init__(self)
         list.__init__(self)
-        self.extend(secList)
-
-    def head(self):
-        """
-        Returns the first item
-        """
-        return self[0]
-
-    def tail(self):
-        """
-        Returns all but the first item
-        """
-        return self[1:]
+        self.extend(sec_list)
 
     def __add__(self, x):
         temp = Lst()

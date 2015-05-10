@@ -2,14 +2,9 @@
 
 ## TODO
 * Document everything with doc strings and comments
-* Change silly classes like cons and lstStart to an enum
 * Parse_cons isn't good, implement it using a macro expander or something
-* Add a case structure
 * Make library use resetEnv with initials properly instead of deepcopy env
 * Make optimisations
-    * Potentially using flags -O -O2 etc.
-    * Can speed up enums https://github.com/ze-phyr-us/fastenum
-* Think about implementing an IO type to make the language more pure
 * Write more tests
 * Implement almost the entire scheme standard
 * Start work on a standard library
