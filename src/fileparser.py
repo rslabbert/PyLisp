@@ -1,6 +1,6 @@
 from parser import Parser
 from errors.pylisperror import PylispError
-from errors.filenotfound import FileNotFoundError
+from errors.filenotfound import PylispFileNotFoundError
 import os
 
 
@@ -9,15 +9,15 @@ class FileParser():
     FileParser is provided a filename and will then proceed to read the file and run each segment of code
     """
 
-    def __init__(self, toRead, vm):
+    def __init__(self, to_read, vm):
         """
         Initliases the virtual machine and environment at the start
         """
         self.vm = vm
-        self.to_read = os.path.abspath(toRead)
+        self.to_read = os.path.abspath(to_read)
 
         if not os.path.exists(self.to_read):
-            raise FileNotFoundError(self.to_read)
+            raise PylispFileNotFoundError(self.to_read)
 
         os.chdir(os.path.dirname(self.to_read))
 

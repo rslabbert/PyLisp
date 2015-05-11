@@ -1,14 +1,11 @@
-import tokens
-from errors.symbolnotfound import SymbolNotFound
-from errors.syntaxerror import PylispSyntaxError
-from errors.librarynotfound import LibraryNotFound
-from errors.pylisptypeerror import PylispTypeError
-from tokens.lst import Lst
-from env import Env
 from copy import deepcopy, copy
-from functools import partial
+
+from env import Env
+import errors
+import errors.symbolnotfound
 import fileparser
-import os
+import tokens
+from tokens.lst import Lst
 
 
 class VirtualMachine():
@@ -67,17 +64,17 @@ class VirtualMachine():
 
         # Syntactic keywords which are implemented on a python level instead of on a pylisp level
         self.core_keywords = {
-            "define": self.sDefine,
-            "begin": self.sBegin,
-            "lambda": self.sLambda,
-            "let": self.sLet,
-            "if": self.sIf,
-            "set!": self.sDefine,
-            "library": self.sLibrary,
-            "import": self.sImport,
-            "export": self.sExport,
-            "cond": self.sCond,
-            "load": self.sLoad
+            "define": self.s_define,
+            "begin": self.s_begin,
+            "lambda": self.s_lambda,
+            "let": self.s_let,
+            "if": self.s_if,
+            "set!": self.s_define,
+            "library": self.s_library,
+            "import": self.s_import,
+            "export": self.s_export,
+            "cond": self.s_cond,
+            "load": self.s_load
         }
 
     def get_registers(self):
@@ -144,9 +141,8 @@ class VirtualMachine():
         # and it is not a core keyword raise an error, otherwise return it
         elif isinstance(self.expr, tokens.symbol.Symbol):
             val = self.env.get(self.expr.value)
-            if val == tokens.pylsyntax.PylSyntax.sNil and val not in self.core_keywords.keys(
-            ):
-                raise SymbolNotFound(self.expr.value)
+            if val == tokens.pylsyntax.PylSyntax.sNil and val not in self.core_keywords.keys():
+                raise errors.symbolnotfound.SymbolNotFound(self.expr.value)
 
             self.values = val
             self.control = self.eval_kontinuation
@@ -178,17 +174,18 @@ class VirtualMachine():
                   self.env.get(self.expr[0].value,
                                "notShadowed") == "notShadowed"):
                 sym = self.expr[0].value
-                self.control = self.core_keywords.get(sym, self.sElse)
+                self.control = self.core_keywords.get(sym, self.s_else)
             else:
-                self.control = self.sElse
+                self.control = self.s_else
 
-    def sLambda(self):
+    def s_lambda(self):
         if len(self.expr) > 3:
-            raise PylispSyntaxError(
+            raise errors.syntaxerror.PylispSyntaxError(
                 "lambda",
                 "Too many expressions, only arguments and body allowed")
         elif len(self.expr) < 3:
-            raise PylispSyntaxError("lambda", "Argument and/or body needed")
+            raise errors.syntaxerror.PylispSyntaxError(
+                "lambda", "Argument and/or body needed")
 
         args = self.expr[1]
         body = self.expr[2]
@@ -197,9 +194,10 @@ class VirtualMachine():
 
         self.control = self.eval_kontinuation
 
-    def sLet(self):
+    def s_let(self):
         if len(self.expr) < 3:
-            raise PylispSyntaxError("let", "Less than two expressions")
+            raise errors.syntaxerror.PylispSyntaxError(
+                "let", "Less than two expressions")
         bindings = self.expr[1]
         body = self.expr[2]
 
@@ -216,36 +214,37 @@ class VirtualMachine():
         bind_right = Lst(*[x[1] for x in bindings])
 
         self.list_exprs = bind_right
-        self.kontinuation = Lst(self.cLet, body, bind_left, self.kontinuation)
+        self.kontinuation = Lst(self.c_let, body, bind_left, self.kontinuation)
         self.control = self.eval_map_value
 
-    def sBegin(self):
+    def s_begin(self):
         if self.expr[1:] is None:
             self.values = None
             self.control = self.eval_kontinuation
             return
 
         self.list_exprs = self.expr[1:]
-        self.kontinuation = Lst(self.cBegin, self.kontinuation)
+        self.kontinuation = Lst(self.c_begin, self.kontinuation)
         self.control = self.eval_map_value
 
-    def sIf(self):
+    def s_if(self):
         if len(self.expr) > 4:
-            raise PylispSyntaxError(
+            raise errors.syntaxerror.PylispSyntaxError(
                 "if",
                 "Too many expressions, only condition, true and false allowed")
         elif len(self.expr) < 4:
-            raise PylispSyntaxError("if", "No true and/or false responses")
+            raise errors.syntaxerror.PylispSyntaxError(
+                "if", "No true and/or false responses")
 
-        self.kontinuation = Lst(self.cIf, self.expr[2], self.expr[3],
+        self.kontinuation = Lst(self.c_if, self.expr[2], self.expr[3],
                                 self.kontinuation)
         self.expr = self.expr[1]
         self.control = self.eval_value
 
-    def sDefine(self):
+    def s_define(self):
         sym = self.expr[0].value
         if not len(self.expr) == 3:
-            raise PylispSyntaxError(
+            raise errors.syntaxerror.PylispSyntaxError(
                 sym,
                 "Wrong number of expressions, only name and value allowed")
 
@@ -263,62 +262,66 @@ class VirtualMachine():
         # Define and set are dealt with individually since set!
         # cannot change a variable which does not exist
         if sym == "define":
-            self.kontinuation = Lst(self.cDefine, name, self.kontinuation)
+            self.kontinuation = Lst(self.c_define, name, self.kontinuation)
         elif sym == "set!":
-            self.kontinuation = Lst(self.cSet, name, self.kontinuation)
+            self.kontinuation = Lst(self.c_set, name, self.kontinuation)
 
-    def sLibrary(self):
+    def s_library(self):
         if len(self.expr) < 2:
-            raise PylispSyntaxError("library", "No name provided")
+            raise errors.syntaxerror.PylispSyntaxError("library",
+                                                       "No name provided")
         name = self.expr[1][0].value
 
-        self.env = Env()
         self.expr = self.expr[2:]
 
-        self.kontinuation = Lst(self.cLibrary, name, deepcopy(self.env),
+        self.kontinuation = Lst(self.c_library, name, deepcopy(self.env),
                                 self.kontinuation)
         self.control = self.eval_value
 
-    def sImport(self):
+    def s_import(self):
         if len(self.expr) < 2:
-            raise PylispSyntaxError("import", "No to import provided")
+            raise errors.syntaxerror.PylispSyntaxError("import",
+                                                       "No to import provided")
         name = self.expr[1].value
-        self.kontinuation = Lst(self.cImport, name, self.env, self.kontinuation)
+        self.kontinuation = Lst(self.c_import, name, self.env,
+                                self.kontinuation)
         self.expr = None
         self.control = self.eval_kontinuation
 
-    def sExport(self):
+    def s_export(self):
         if len(self.expr) < 2:
-            raise PylispSyntaxError("export", "Nothing to export provided")
+            raise errors.syntaxerror.PylispSyntaxError(
+                "export", "Nothing to export provided")
         if not self.export:
             self.export = [self.expr[1].value]
         else:
             self.export.append(self.expr[1].value)
         self.control = self.eval_kontinuation
 
-    def sCond(self):
+    def s_cond(self):
         if len(self.expr) < 2:
-            raise PylispSyntaxError("cond",
-                                    "At least one test needs to be provided")
+            raise errors.syntaxerror.PylispSyntaxError(
+                "cond", "At least one test needs to be provided")
         exprs = self.expr[1:]
         conds = Lst(*[x[0] for x in exprs])
         rets = Lst(*[x[1:] for x in exprs])
 
         self.expr = conds[0]
-        self.kontinuation = Lst(self.cCond, conds[1:], rets, self.kontinuation)
+        self.kontinuation = Lst(self.c_cond, conds[1:], rets, self.kontinuation)
         self.control = self.eval_value
 
-    def sLoad(self):
+    def s_load(self):
         if len(self.expr) < 2:
-            raise PylispSyntaxError("load", "Nothing to load provided")
-        self.kontinuation = Lst(self.cLoad, self.expr[1].value + ".pyl",
+            raise errors.syntaxerror.PylispSyntaxError(
+                "load", "Nothing to load provided")
+        self.kontinuation = Lst(self.c_load, self.expr[1].value + ".pyl",
                                 self.kontinuation)
 
         self.expr = None
         self.control = self.eval_kontinuation
 
-    def sElse(self):
-        self.kontinuation = Lst(self.cProcFunc, self.expr[1:],
+    def s_else(self):
+        self.kontinuation = Lst(self.c_proc_func, self.expr[1:],
                                 self.kontinuation)
         self.expr = self.expr[0]
         self.control = self.eval_value
@@ -329,7 +332,7 @@ class VirtualMachine():
     # Always the last item in the kontinuation
     # Signals the end of an expression
     # Ends execution
-    def cEmpty(self):
+    def c_empty(self):
         if self.return_val is None:
             self.return_val = self.values
 
@@ -338,7 +341,7 @@ class VirtualMachine():
 
     # Used after certain expressions to reset the environment
     # This emulates local environments for functions and let expressions
-    def cResetEnv(self):
+    def c_reset_env(self):
         for k, v in self.kontinuation[1].items():
             if v == tokens.pylsyntax.PylSyntax.sNil:
                 del self.env[k]
@@ -348,7 +351,7 @@ class VirtualMachine():
         self.kontinuation = self.kontinuation[2]
         return
 
-    def cLet(self):
+    def c_let(self):
         args = self.values
         body = self.kontinuation[1]
         bind_left = self.kontinuation[2]
@@ -363,11 +366,11 @@ class VirtualMachine():
                      bind_left[0].value, args)
 
         self.expr = body
-        self.kontinuation = Lst(self.cResetEnv, init, k)
+        self.kontinuation = Lst(self.c_reset_env, init, k)
         self.control = self.eval_value
         return
 
-    def cBegin(self):
+    def c_begin(self):
         results = self.values
         k = self.kontinuation[1]
 
@@ -376,7 +379,7 @@ class VirtualMachine():
         self.control = self.eval_kontinuation
         return
 
-    def cIf(self):
+    def c_if(self):
         condition = self.values
         true = self.kontinuation[1]
         false = self.kontinuation[2]
@@ -393,7 +396,7 @@ class VirtualMachine():
             self.control = self.eval_value
             return
 
-    def cDefine(self):
+    def c_define(self):
         value = self.values
         symbol = self.kontinuation[1]
 
@@ -406,12 +409,12 @@ class VirtualMachine():
         self.control = self.eval_kontinuation
         return
 
-    def cSet(self):
+    def c_set(self):
         value = self.values
         symbol = self.kontinuation[1]
 
         if self.env.get(symbol.value) == tokens.pylsyntax.PylSyntax.sNil:
-            raise SymbolNotFound(symbol.value)
+            raise errors.symbolnotfound.SymbolNotFound(symbol.value)
 
         k = self.kontinuation[2]
 
@@ -425,19 +428,19 @@ class VirtualMachine():
     # The first step in evaluating a function
     # Evaluates all the arguments first to ensure that only a single value
     # is passed to the function as opposed to an expression
-    def cProcFunc(self):
+    def c_proc_func(self):
         func = self.values
         args = self.kontinuation[1]
         k = self.kontinuation[2]
 
         self.list_exprs = args
-        self.kontinuation = Lst(self.cProcArgs, func, k)
+        self.kontinuation = Lst(self.c_proc_args, func, k)
         self.control = self.eval_map_value
         return
 
     # After the arguments are evaluated the function is then set up to be
     # run by the evalProcedure function
-    def cProcArgs(self):
+    def c_proc_args(self):
         args = self.values
         func = copy(self.kontinuation[1])
         keys = self.kontinuation[2]
@@ -451,19 +454,19 @@ class VirtualMachine():
     # A step in evaluating more than one expression
     # Takes the first item returned puts it in a kontinuation then goes on
     # to evaluate the second argument
-    def cMapValueOfStep(self):
+    def c_map_value_of_step(self):
         first = self.values
         second = self.kontinuation[1]
         k = self.kontinuation[2]
 
         self.list_exprs = second
-        self.kontinuation = Lst(self.cMapValueOfCons, first, k)
+        self.kontinuation = Lst(self.c_map_value_of_cons, first, k)
         self.control = self.eval_map_value
         return
 
     # After cMapValueOfStep has been performed and the second value does not exist anymore
     # The first and second elements are then bound together in a Lst
-    def cMapValueOfCons(self):
+    def c_map_value_of_cons(self):
         first = self.kontinuation[1]
         second = self.values
         k = self.kontinuation[2]
@@ -484,7 +487,7 @@ class VirtualMachine():
     # For definition of a library
     # It creates its own environment, then binds all the export values into it
     # Finally it adds the library to the main environment
-    def cLibrary(self):
+    def c_library(self):
         name = self.kontinuation[1]
         env = self.kontinuation[2]
         k = self.kontinuation[3]
@@ -510,7 +513,7 @@ class VirtualMachine():
 
     # Import pulls a library from either the environment or as a standard
     # library
-    def cImport(self):
+    def c_import(self):
         name = self.kontinuation[1]
         env = self.kontinuation[2]
         k = self.kontinuation[3]
@@ -526,7 +529,7 @@ class VirtualMachine():
                     if lib[0] == "py":
                         self.env.update(lib[1])
                     elif lib[0] == "pyl":
-                        self.kontinuation = Lst(self.cLoad, lib[1],
+                        self.kontinuation = Lst(self.c_load, lib[1],
                                                 self.kontinuation)
         else:
             lib_env = val
@@ -539,7 +542,7 @@ class VirtualMachine():
 
     # Checks every condition until a true or else is found, then returns
     # the corresponding return value
-    def cCond(self):
+    def c_cond(self):
         cond = self.values
         conditions = self.kontinuation[1]
         return_values = self.kontinuation[2]
@@ -550,7 +553,7 @@ class VirtualMachine():
             self.kontinuation = k
         elif len(conditions) > 0:
             self.expr = conditions[0]
-            self.kontinuation = Lst(self.cCond, conditions[1:],
+            self.kontinuation = Lst(self.c_cond, conditions[1:],
                                     return_values[1:], k)
         else:
             self.values = False
@@ -559,7 +562,7 @@ class VirtualMachine():
         self.control = self.eval_value
         return
 
-    def cLoad(self):
+    def c_load(self):
         name = self.kontinuation[1]
         k = self.kontinuation[2]
 
@@ -586,7 +589,7 @@ class VirtualMachine():
 
         else:
             self.expr = self.list_exprs[0]
-            self.kontinuation = Lst(self.cMapValueOfStep, self.list_exprs[1:],
+            self.kontinuation = Lst(self.c_map_value_of_step, self.list_exprs[1:],
                                     self.kontinuation)
             self.control = self.eval_value
             return
@@ -611,14 +614,15 @@ class VirtualMachine():
                 for k in env.keys():
                     init[k] = self.env.get(k)
                 self.env.update(env)
-                self.kontinuation = Lst(self.cResetEnv, init,
+                self.kontinuation = Lst(self.c_reset_env, init,
                                         self.kontinuation)
                 self.control = self.eval_value
 
             # If it's more than, return an error
             elif len(self.args) > len(self.func.args):
-                raise PylispSyntaxError("function {}".format(self.func.value),
-                                        "Too many arguments")
+                raise errors.syntaxerror.PylispSyntaxError(
+                    "function {}".format(self.func.value),
+                    "Too many arguments")
 
             # Otherwise, curry the function by setting some of the arguments
             else:
@@ -637,11 +641,12 @@ class VirtualMachine():
                 try:
                     self.values = self.func(*self.args)
                 except TypeError:
-                    raise PylispTypeError(self.func, *self.args)
+                    raise errors.pylisptypeerror.PylispTypeError(self.func,
+                                                                 *self.args)
 
             elif len(self.args) > self.func.arg_len:
-                raise PylispSyntaxError("function {}".format(self.func),
-                                        "Too many arguments")
+                raise errors.syntaxerror.PylispSyntaxError(
+                    "function {}".format(self.func), "Too many arguments")
             else:
                 self.values = self.func
                 self.values.args += tuple(self.args)
@@ -649,7 +654,7 @@ class VirtualMachine():
 
         # Just a single token
         elif len(self.args) > 0:
-            raise PylispTypeError(
+            raise errors.pylisptypeerror.PylispTypeError(
                 self.func, *self.args,
                 msg=" because {} is not a function".format(self.func))
         else:
@@ -661,7 +666,7 @@ class VirtualMachine():
         Main loop. Sets the proper variables, then runs self.control until it is None, then returns the returnVal register
         """
         self.expr = expr
-        self.kontinuation = Lst(self.cEmpty)
+        self.kontinuation = Lst(self.c_empty)
         self.control = self.eval_value
         self.return_val = None
         while self.control is not None:

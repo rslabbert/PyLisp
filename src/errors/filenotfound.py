@@ -1,7 +1,7 @@
 from errors.pylisperror import PylispError
 
 
-class FileNotFoundError(PylispError):
+class PylispFileNotFoundError(PylispError):
     def __init__(self, expr, msg=""):
         PylispError.__init__(self, expr, msg)
 

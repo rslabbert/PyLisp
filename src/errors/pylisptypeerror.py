@@ -1,12 +1,11 @@
 from errors.pylisperror import PylispError
-import tokens
 
 
 class PylispTypeError(PylispError):
     """
     """
 
-    def __init__(self, expr, *args, msg=""):
+    def __init__(self, expr, msg="", *args):
         PylispError.__init__(self, expr, msg)
         self.args = map(lambda x: str(x) + ": " + str(type(x).__name__), args)
 

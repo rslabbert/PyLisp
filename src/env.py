@@ -1,8 +1,8 @@
-from tokens.pylsyntax import PylSyntax
-from inspect import getfile
 import os
-import sys
+from inspect import getfile
 from importlib.machinery import SourceFileLoader
+
+from tokens.pylsyntax import PylSyntax
 
 
 class Env(dict):
@@ -10,12 +10,14 @@ class Env(dict):
     The environment which is used to find variables and symbols and their associated value
     """
 
-    def __init__(self, secEnv={}):
+    def __init__(self, secondary_env=None):
         """
         secEnv variable to allow an environment to inherit from a previous one
         """
+        if not secondary_env:
+            secondary_env = {}
         dict.__init__(self)
-        self.update(secEnv)
+        self.update(secondary_env)
 
         # The standard library will be in PyLisp/std
         self.std_path = os.path.join(
@@ -53,7 +55,7 @@ class Env(dict):
                         module = pf.load_module()
                         if hasattr(module, "export"):
                             ret.append(("py", module.export))
-                    except:
+                    except AttributeError:
                         ret.append(("None", "No Export"))
                 elif val.endswith(".pyl"):
                     ret.append(("pyl", val))
