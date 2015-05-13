@@ -103,6 +103,5 @@ class Interpreter():
             except PylispError as e:
                 print(e)
                 self.vm.set_registers(self.registers)
-            except EOFError:
-                print("Bye")
+            except (KeyboardInterrupt, EOFError):
                 return

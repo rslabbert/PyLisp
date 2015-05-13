@@ -1,8 +1,8 @@
 from copy import deepcopy, copy
 
 from env import Env
-import errors
 import errors.symbolnotfound
+import errors.pylisptypeerror
 import fileparser
 import tokens
 from tokens.lst import Lst
@@ -141,7 +141,8 @@ class VirtualMachine():
         # and it is not a core keyword raise an error, otherwise return it
         elif isinstance(self.expr, tokens.symbol.Symbol):
             val = self.env.get(self.expr.value)
-            if val == tokens.pylsyntax.PylSyntax.sNil and val not in self.core_keywords.keys():
+            if val == tokens.pylsyntax.PylSyntax.sNil and val not in self.core_keywords.keys(
+            ):
                 raise errors.symbolnotfound.SymbolNotFound(self.expr.value)
 
             self.values = val
@@ -307,7 +308,8 @@ class VirtualMachine():
         rets = Lst(*[x[1:] for x in exprs])
 
         self.expr = conds[0]
-        self.kontinuation = Lst(self.c_cond, conds[1:], rets, self.kontinuation)
+        self.kontinuation = Lst(self.c_cond, conds[1:], rets,
+                                self.kontinuation)
         self.control = self.eval_value
 
     def s_load(self):
@@ -589,8 +591,8 @@ class VirtualMachine():
 
         else:
             self.expr = self.list_exprs[0]
-            self.kontinuation = Lst(self.c_map_value_of_step, self.list_exprs[1:],
-                                    self.kontinuation)
+            self.kontinuation = Lst(self.c_map_value_of_step,
+                                    self.list_exprs[1:], self.kontinuation)
             self.control = self.eval_value
             return
 
@@ -637,12 +639,14 @@ class VirtualMachine():
         elif isinstance(self.func, tokens.function.Builtin):
             self.control = self.eval_kontinuation
 
-            if len(self.args) == self.func.arg_len or self.func.has_unpack_args:
+            if len(
+                self.args) == self.func.arg_len or self.func.has_unpack_args:
                 try:
                     self.values = self.func(*self.args)
                 except TypeError:
-                    raise errors.pylisptypeerror.PylispTypeError(self.func,
-                                                                 *self.args)
+                    raise errors.pylisptypeerror.PylispTypeError(
+                        self.func, *self.args,
+                        msg=" due to type mismatch")
 
             elif len(self.args) > self.func.arg_len:
                 raise errors.syntaxerror.PylispSyntaxError(
