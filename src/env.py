@@ -21,7 +21,7 @@ class Env(dict):
 
         # The standard library will be in PyLisp/std
         self.std_path = os.path.join(
-            os.path.dirname(os.path.dirname(getfile(Env))), "lib")
+            os.path.dirname(os.path.dirname(getfile(Env))), "PyLib")
         self.std_libs = {}
         self.get_libs()
         self.standard_env = ["core"]

@@ -1,0 +1,50 @@
+(define (length xs)
+  (if (null? xs) 0
+    (+ 1 (length (cdr xs)))))
+
+(define (map f xs)
+  (if (null? xs)
+    []
+    [(f (car xs))] . (map f (cdr xs))))
+
+(define (filter c xs)
+  (cond
+    ((null? xs) [])
+    ((c (car xs)) (append [(car xs)] (filter c (cdr xs))))
+    (else (filter c (cdr xs)))))
+
+(define (reject c xs)
+  (cond
+    ((null? xs) [])
+    ((not (c (car xs))) (append [(car xs)] (reject c (cdr xs))))
+    (else (reject c (cdr xs)))))
+
+(define (find c xs)
+  (cond
+    ((null? xs) [])
+    ((c (car xs)) (car xs))
+    (else (find c (cdr xs)))))
+
+(define (every? c xs)
+  (null? (reject c xs)))
+
+(define (some? c xs)
+  (not (= 0 (length (filter c xs)))))
+
+(define (foldl f xs acc)
+  (if (null? xs)
+    acc
+    (foldl f (cdr xs) (f (car xs) acc))))
+
+(define (foldr f acc xs)
+  (if (null? xs)
+    acc
+    (f (car xs) (foldr f acc (cdr xs)))))
+
+(define (zip-with f x y)
+  (if (or (null? x) (null? y))
+    []
+    (f (car x) (car y)) . (zip-with f (cdr x) (cdr y))))
+
+(define (zip x y)
+  (zip-with list x y))
