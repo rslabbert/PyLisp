@@ -61,7 +61,11 @@ class Interpreter():
         if state == 0:
             self.completion_candidates = []
 
-            for i in list(self.repl_env.keys()) + self.vm.core_keywords:
+            tmp = []
+            tmp.extend(self.repl_env.keys())
+            tmp.extend(self.vm.core_keywords.keys())
+
+            for i in tmp:
                 if i.startswith(text):
                     self.completion_candidates.append(i)
 

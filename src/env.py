@@ -2,6 +2,8 @@ import os
 from inspect import getfile
 from importlib.machinery import SourceFileLoader
 
+import errors.librarynotfound
+import errors.libraryerror
 from tokens.pylsyntax import PylSyntax
 
 
@@ -45,7 +47,7 @@ class Env(dict):
     def include_lib(self, lib):
         path = self.std_libs.get(lib)
         if path is None:
-            return []
+            raise errors.librarynotfound.LibraryNotFound(lib)
         else:
             ret = []
             for val in self.get_lib(path):
@@ -55,8 +57,10 @@ class Env(dict):
                         module = pf.load_module()
                         if hasattr(module, "export"):
                             ret.append(("py", module.export))
-                    except AttributeError:
-                        ret.append(("None", "No Export"))
+                        else:
+                            ret.append(("None", "No Export"))
+                    except Exception as e:
+                        raise errors.libraryerror.LibraryError(val, lib, e)
                 elif val.endswith(".pyl"):
                     ret.append(("pyl", val))
 

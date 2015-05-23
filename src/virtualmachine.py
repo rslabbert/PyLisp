@@ -141,9 +141,12 @@ class VirtualMachine():
         # and it is not a core keyword raise an error, otherwise return it
         elif isinstance(self.expr, tokens.symbol.Symbol):
             val = self.env.get(self.expr.value)
-            if val == tokens.pylsyntax.PylSyntax.sNil and val not in self.core_keywords.keys(
-            ):
-                raise errors.symbolnotfound.SymbolNotFound(self.expr.value)
+            if val == tokens.pylsyntax.PylSyntax.sNil:
+                if self.expr.value in self.core_keywords.keys():
+                    self.expr = Lst(self.expr)
+                    return
+                else:
+                    raise errors.symbolnotfound.SymbolNotFound(self.expr.value)
 
             self.values = val
             self.control = self.eval_kontinuation
