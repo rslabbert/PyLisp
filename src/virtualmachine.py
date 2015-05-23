@@ -214,12 +214,17 @@ class VirtualMachine():
 
         # Extract all the bindings, to then evaluate the right side
         # and assign it to the left
-        bind_left = Lst(*[x[0] for x in bindings])
-        bind_right = Lst(*[x[1] for x in bindings])
+        if len(bindings) > 1:
+            bind_left = Lst(*[x[0] for x in bindings])
+            bind_right = Lst(*[x[1] for x in bindings])
 
-        self.list_exprs = bind_right
-        self.kontinuation = Lst(self.c_let, body, bind_left, self.kontinuation)
-        self.control = self.eval_map_value
+            self.list_exprs = bind_right
+            self.kontinuation = Lst(self.c_let, body, bind_left, self.kontinuation)
+            self.control = self.eval_map_value
+        else:
+            self.kontinuation = Lst(self.c_let, body, Lst(bindings[0][0]), self.kontinuation)
+            self.expr = Lst(bindings[0][1])
+            self.control = self.eval_value
 
     def s_begin(self):
         if self.expr[1:] is None:
@@ -642,8 +647,7 @@ class VirtualMachine():
         elif isinstance(self.func, tokens.function.Builtin):
             self.control = self.eval_kontinuation
 
-            if len(
-                self.args) == self.func.arg_len or self.func.has_unpack_args:
+            if len(self.args) == self.func.arg_len or self.func.has_unpack_args:
                 try:
                     self.values = self.func(*self.args)
                 except TypeError:
@@ -659,11 +663,11 @@ class VirtualMachine():
                 self.values.args += tuple(self.args)
                 self.values.arg_len -= 1
 
-        # Just a single token
         elif len(self.args) > 0:
             raise errors.pylisptypeerror.PylispTypeError(
                 self.func, *self.args,
                 msg=" because {} is not a function".format(self.func))
+        # Just a single token
         else:
             self.values = self.func
             self.control = self.eval_kontinuation

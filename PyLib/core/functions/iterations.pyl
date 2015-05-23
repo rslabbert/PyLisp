@@ -1,0 +1,9 @@
+(define (quicksort xs)
+  (if (null? xs)
+    []
+    (let 
+      ((pivot (car xs)))
+      (let
+         ((lower (filter (> pivot) xs))
+         (higher (filter (< pivot) xs)))
+        (quicksort lower) . [pivot] . (quicksort higher)))))
