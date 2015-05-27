@@ -1,10 +1,10 @@
-import readline
 import atexit
+from os import name as osname
 from os import environ
 from os.path import expanduser, join
 
 from env import Env
-from parser import Parser
+from pylparser import Parser
 from virtualmachine import VirtualMachine
 from fileparser import FileParser
 from errors.pylisperror import PylispError
@@ -17,7 +17,28 @@ class Interpreter():
 
     def __init__(self):
         # Initialises using the environment as the prompt
-        username = environ["USER"]
+        if not osname == 'nt':
+            import readline
+            username = environ["USER"]
+            
+            # Uses the readline library to gain tab completion, matching
+            # parenthesis, and automatic history
+            readline.set_completer(self.complete)
+            readline.parse_and_bind('tab: complete')
+            readline.parse_and_bind('set blink-matching-paren on')
+    
+            self.histfile = join(expanduser("~"), ".pylisp_history")
+            try:
+                readline.read_history_file(self.histfile)
+            except FileNotFoundError:
+                open(self.histfile, 'a').close()
+    
+            self.completion_candidates = []
+    
+            atexit.register(readline.write_history_file, self.histfile)
+        else:
+            username = environ["USERNAME"]
+            
         self.prompt = username + "> "
 
         self.intro = "Welcome to the PyLisp interpreter"
@@ -27,23 +48,7 @@ class Interpreter():
 
         self.vm = VirtualMachine(self.repl_env)
         self.registers = None
-
-        # Uses the readline library to gain tab completion, matching
-        # parenthesis, and automatic history
-        readline.set_completer(self.complete)
-        readline.parse_and_bind('tab: complete')
-        readline.parse_and_bind('set blink-matching-paren on')
-
-        self.histfile = join(expanduser("~"), ".pylisp_history")
-        try:
-            readline.read_history_file(self.histfile)
-        except FileNotFoundError:
-            open(self.histfile, 'a').close()
-
-        self.completion_candidates = []
-
-        atexit.register(readline.write_history_file, self.histfile)
-
+        
     def load_std(self):
         for i in self.vm.env.standard_env:
             libs = self.vm.env.include_lib(i)

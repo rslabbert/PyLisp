@@ -1,4 +1,4 @@
-from parser import Parser
+from pylparser import Parser
 from errors.pylisperror import PylispError
 from errors.filenotfound import PylispFileNotFoundError
 import os
