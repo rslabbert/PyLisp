@@ -651,7 +651,13 @@ class VirtualMachine():
         """
 
         # Handle () as an argument
-        if len([y for y in filter(lambda x: x is not None, self.args)]) == 0:
+        empty = True
+        for i in self.args:
+            if i is not None:
+                empty = False
+                break
+
+        if empty:
             self.args = []
 
         # A function defined in PyLisp
@@ -661,10 +667,12 @@ class VirtualMachine():
             # If the arguments are equal then evalute the function
             if len(self.args) == len(self.func.args):
                 env = self.func.get_env(*self.args)
+
                 init = {}
                 for k in env.keys():
                     init[k] = self.env.get(k)
                 self.env.update(env)
+
                 self.kontinuation = [self.c_reset_env, init,
                                         self.kontinuation]
                 self.control = self.eval_value
@@ -682,8 +690,6 @@ class VirtualMachine():
                 func.args = func.args[len(self.args):]
                 self.values = func
                 self.control = self.eval_kontinuation
-
-            return
 
         elif isinstance(self.func, tokens.function.Builtin):
             self.control = self.eval_kontinuation
