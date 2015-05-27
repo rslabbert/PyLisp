@@ -23,6 +23,9 @@ class FileParser():
 
 
     def load_std(self):
+        """
+        Adds all the core libraries to the environment
+        """
         to_read = self.to_read
         for i in self.vm.env.standard_env:
             libs = self.vm.env.include_lib(i)
