@@ -1,7 +1,6 @@
 from enum import Enum
 
 import tokens.function
-import tokens.lst
 import tokens.symbol
 import tokens.number
 import tokens.string
@@ -125,7 +124,7 @@ class Parser:
         """
         Takes a parsed buffer and returns a syntax tree where parens are replaced with lists containing the items between them and literals are replaced with literals
         """
-        tree = tokens.lst.Lst()
+        tree = []
         i = 0
         while i < len(data):
             # Parses a literal
@@ -165,7 +164,7 @@ class Parser:
         i = 0
         while i < len(data):
             # Parses a literal
-            if isinstance(data[i], tokens.lst.Lst):
+            if isinstance(data[i], list):
                 return_val = self.parse_cons(data[i])
                 data[i] = return_val
             elif data[i] == ParserTokens.cons:
@@ -176,8 +175,8 @@ class Parser:
                     raise PylispSyntaxError(data,
                                             "Last item of pair can't be none")
 
-                data[i] = tokens.lst.Lst(tokens.symbol.Symbol("cons"),
-                                         data[i - 1], data[i + 1])
+                data[i] = [tokens.symbol.Symbol("cons"),
+                                         data[i - 1], data[i + 1]]
                 del data[i + 1]
                 del data[i - 1]
                 i -= 2
@@ -209,12 +208,12 @@ class Parser:
             token_list.extend(parsed) if isinstance(
                 parsed, list) else token_list.append(parsed)
 
-        if len(token_list) == 0 or token_list == tokens.lst.Lst(None):
+        if len(token_list) == 0 or token_list == [None]:
             return tokens.string.String("")
 
         result, _ = self.create_syntax_tree(token_list)
 
-        if isinstance(result, tokens.lst.Lst):
+        if isinstance(result, list):
             result = self.parse_cons(result)
 
         return result

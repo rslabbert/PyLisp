@@ -1,5 +1,4 @@
 from tokens.token import Token
-from tokens.lst import Lst
 
 
 class Function(Token):
@@ -11,7 +10,7 @@ class Function(Token):
     def __init__(self, name, args, expr, env):
         Token.__init__(self)
         self.value = name
-        self.args = Lst(*map(lambda x: x.value, args))
+        self.args = [x for x in map(lambda x: x.value, args)]
         self.expr = expr
         self.env = env
 
@@ -45,4 +44,4 @@ class Builtin(Token):
         return self.func(*self.args + args)
 
     def __repr__(self):
-        return "{}".format(Lst(self.value, *self.args))
+        return "{}".format([self.value] + list(*self.args))
