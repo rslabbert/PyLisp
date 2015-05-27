@@ -1,4 +1,3 @@
-import atexit
 from os import name as osname
 from os import environ
 from os.path import expanduser, join
@@ -16,9 +15,13 @@ class Interpreter():
     """
 
     def __init__(self):
-        # Initialises using the environment as the prompt
-        if not osname == 'nt':
+        
+        # Windows does not have GNU readline, and has different environment variables
+        if osname == 'nt':
+            username = environ["USERNAME"]
+        else:
             import readline
+            import atexit
             username = environ["USER"]
             
             # Uses the readline library to gain tab completion, matching
@@ -36,9 +39,8 @@ class Interpreter():
             self.completion_candidates = []
     
             atexit.register(readline.write_history_file, self.histfile)
-        else:
-            username = environ["USERNAME"]
             
+        # Initialises using the user's username as the prompt
         self.prompt = username + "> "
 
         self.intro = "Welcome to the PyLisp interpreter"
@@ -50,6 +52,9 @@ class Interpreter():
         self.registers = None
         
     def load_std(self):
+        """
+        Adds the core libraries to the environment
+        """
         for i in self.vm.env.standard_env:
             libs = self.vm.env.include_lib(i)
             for lib in libs:
