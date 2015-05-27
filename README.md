@@ -1,14 +1,14 @@
 # PyLisp
 
-## TODO
-* Document everything with doc strings and comments
-* Write more tests
-
 ## Dependencies
 * Python 3
 
 ## Usage
-To run pylisp, execute the `bin/pylisp` shell file, assuming `/bin/sh` is installed(which should be the case on unix system such as osx/linux), otherwise run `python3 src/main.py`.
+### OSX/Linux
+Execute the `bin/pylisp.sh` file, or run `python3 src/main.py`.
+
+### Windows
+Execute the `bin/pylisp.bat` file, or run `src/main.py` through IDLE.
 
 If pylisp is run without any arguments it starts an interpreter session, if run with an argument it attempts to open it as a file.
 
