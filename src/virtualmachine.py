@@ -314,7 +314,7 @@ class VirtualMachine():
 
 
     ################################################################################
-    # Define Set
+    # Define/Set
     ################################################################################
     def s_define(self):
         sym = self.expr[0].value
@@ -539,6 +539,9 @@ class VirtualMachine():
         return
 
     def s_else(self):
+        """
+        Run if the symbol does not match a keyword, meaning it's a function
+        """
         self.kontinuation = [self.c_proc_func, self.expr[1:],
                                 self.kontinuation]
         self.expr = self.expr[0]
