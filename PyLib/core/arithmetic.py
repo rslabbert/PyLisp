@@ -1,4 +1,5 @@
 import operator as op
+import functools
 import math
 from tokens.function import Builtin
 
@@ -6,10 +7,10 @@ from tokens.function import Builtin
 # Lambdas are used instead of builtin functions since the argument count
 # can then be accessed which is used for currying
 export = {
-    "+": Builtin("+", lambda x, y: op.add(x, y)),
-    "-": Builtin("-", lambda x, y: op.sub(x, y)),
-    "*": Builtin("*", lambda x, y: op.mul(x, y)),
-    "/": Builtin("/", lambda x, y: op.truediv(x, y)),
+    "+": Builtin("+", lambda x, y, *z: sum([x, y] + [i for i in z])),
+    "-": Builtin("-", lambda x, y, *z: functools.reduce(op.sub, [x, y] + [i for i in z])),
+    "*": Builtin("*", lambda x, y, *z: functools.reduce(op.mul, [x, y] + [i for i in z])),
+    "/": Builtin("/", lambda x, y, *z: functools.reduce(op.truediv, [x, y] + [i for i in z])),
     "expt": Builtin("expt", lambda x, y: op.pow(x, y)),
     "modulo": Builtin("modulo", lambda x, y: op.mod(x, y)),
     "max": Builtin("max", lambda x: max(x)),

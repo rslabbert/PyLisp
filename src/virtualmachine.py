@@ -647,10 +647,11 @@ class VirtualMachine():
         elif isinstance(self.func, tokens.function.Builtin):
             self.control = self.eval_kontinuation
 
-            if len(self.args) == self.func.arg_len or self.func.has_unpack_args:
+            if len(self.args) == self.func.arg_len or (self.func.has_unpack_args and len(self.args) > self.func.arg_len):
                 try:
                     self.values = self.func(*self.args)
                 except TypeError:
+                    print(self.args)
                     raise errors.pylisptypeerror.PylispTypeError(
                         self.func, *self.args,
                         msg=" due to type mismatch")

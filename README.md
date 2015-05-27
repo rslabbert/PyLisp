@@ -2,13 +2,7 @@
 
 ## TODO
 * Document everything with doc strings and comments
-* Parse_cons isn't good, implement it using a macro expander or something
-* Make library use resetEnv with initials properly instead of deepcopy env
-* Make optimisations
 * Write more tests
-* Implement almost the entire scheme standard
-* Start work on a standard library
-* Implement a macro expander system
 
 ## Usage
 To run pylisp you can execute the `bin/pylisp` shell file, assuming sh/bash/zsh/etc. is installed, otherwise running python3 main.py works too.

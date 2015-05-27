@@ -5,7 +5,7 @@
 (define (map f xs)
   (if (null? xs)
     []
-    [(f (car xs))] . (map f (cdr xs))))
+    (f (car xs)) . (map f (cdr xs))))
 
 (define (filter c xs)
   (cond
