@@ -182,6 +182,10 @@ class VirtualMachine():
             else:
                 self.control = self.s_else
 
+
+    ################################################################################
+    # Lambda
+    ################################################################################
     def s_lambda(self):
         if len(self.expr) > 3:
             raise errors.syntaxerror.PylispSyntaxError(
@@ -198,6 +202,10 @@ class VirtualMachine():
 
         self.control = self.eval_kontinuation
 
+
+    ################################################################################
+    # Let
+    ################################################################################
     def s_let(self):
         if len(self.expr) < 3:
             raise errors.syntaxerror.PylispSyntaxError(
@@ -219,13 +227,38 @@ class VirtualMachine():
             bind_right = Lst(*[x[1] for x in bindings])
 
             self.list_exprs = bind_right
-            self.kontinuation = Lst(self.c_let, body, bind_left, self.kontinuation)
+            self.kontinuation = Lst(self.c_let, body, bind_left,
+                                    self.kontinuation)
             self.control = self.eval_map_value
         else:
-            self.kontinuation = Lst(self.c_let, body, Lst(bindings[0][0]), self.kontinuation)
+            self.kontinuation = Lst(self.c_let, body, Lst(bindings[0][0]),
+                                    self.kontinuation)
             self.expr = Lst(bindings[0][1])
             self.control = self.eval_value
 
+    def c_let(self):
+        args = self.values
+        body = self.kontinuation[1]
+        bind_left = self.kontinuation[2]
+        k = self.kontinuation[3]
+
+        init = {}
+
+        for x in bind_left:
+            init[x.value] = self.env.get(x.value)
+
+        self.env.set([x.value for x in bind_left] if len(bind_left) > 1 else
+                     bind_left[0].value, args)
+
+        self.expr = body
+        self.kontinuation = Lst(self.c_reset_env, init, k)
+        self.control = self.eval_value
+        return
+
+
+    ################################################################################
+    # Begin
+    ################################################################################
     def s_begin(self):
         if self.expr[1:] is None:
             self.values = None
@@ -236,6 +269,19 @@ class VirtualMachine():
         self.kontinuation = Lst(self.c_begin, self.kontinuation)
         self.control = self.eval_map_value
 
+    def c_begin(self):
+        results = self.values
+        k = self.kontinuation[1]
+
+        self.kontinuation = k
+        self.values = results[-1] if self.values is not None else None
+        self.control = self.eval_kontinuation
+        return
+
+
+    ################################################################################
+    # If
+    ################################################################################
     def s_if(self):
         if len(self.expr) > 4:
             raise errors.syntaxerror.PylispSyntaxError(
@@ -250,6 +296,27 @@ class VirtualMachine():
         self.expr = self.expr[1]
         self.control = self.eval_value
 
+    def c_if(self):
+        condition = self.values
+        true = self.kontinuation[1]
+        false = self.kontinuation[2]
+        k = self.kontinuation[3]
+
+        if condition:
+            self.expr = true
+            self.kontinuation = k
+            self.control = self.eval_value
+            return
+        else:
+            self.expr = false
+            self.kontinuation = k
+            self.control = self.eval_value
+            return
+
+
+    ################################################################################
+    # Define Set
+    ################################################################################
     def s_define(self):
         sym = self.expr[0].value
         if not len(self.expr) == 3:
@@ -275,6 +342,39 @@ class VirtualMachine():
         elif sym == "set!":
             self.kontinuation = Lst(self.c_set, name, self.kontinuation)
 
+    def c_define(self):
+        value = self.values
+        symbol = self.kontinuation[1]
+
+        k = self.kontinuation[2]
+
+        self.env.set(symbol.value, value)
+        self.return_val = value
+        self.kontinuation = k
+        self.values = None
+        self.control = self.eval_kontinuation
+        return
+
+    def c_set(self):
+        value = self.values
+        symbol = self.kontinuation[1]
+
+        if self.env.get(symbol.value) == tokens.pylsyntax.PylSyntax.sNil:
+            raise errors.symbolnotfound.SymbolNotFound(symbol.value)
+
+        k = self.kontinuation[2]
+
+        self.env.set(symbol.value, value)
+        self.return_val = value
+        self.kontinuation = k
+        self.values = None
+        self.control = self.eval_kontinuation
+        return
+
+
+    ################################################################################
+    # Library
+    ################################################################################
     def s_library(self):
         if len(self.expr) < 2:
             raise errors.syntaxerror.PylispSyntaxError("library",
@@ -287,6 +387,37 @@ class VirtualMachine():
                                 self.kontinuation)
         self.control = self.eval_value
 
+    # For definition of a library
+    # It creates its own environment, then binds all the export values into it
+    # Finally it adds the library to the main environment
+    def c_library(self):
+        name = self.kontinuation[1]
+        env = self.kontinuation[2]
+        k = self.kontinuation[3]
+        self.kontinuation = k
+
+        lib_env = Env()
+
+        if self.export:
+            for i in self.export:
+                # Gets all the dependants and adds it to the functions environment
+                if isinstance(self.env[i], tokens.function.Function):
+                    for ident, val in self.get_dependants(self.env[i], env):
+                        self.env[i].env.set(ident, val)
+
+                lib_env.set(i, self.env[i])
+
+            self.export = None
+
+        env.set(name, lib_env)
+        self.env = env
+        self.control = self.eval_value
+        return
+
+
+    ################################################################################
+    # Import
+    ################################################################################
     def s_import(self):
         if len(self.expr) < 2:
             raise errors.syntaxerror.PylispSyntaxError("import",
@@ -297,6 +428,39 @@ class VirtualMachine():
         self.expr = None
         self.control = self.eval_kontinuation
 
+    # Import pulls a library from either the environment or as a standard
+    # library
+    def c_import(self):
+        name = self.kontinuation[1]
+        env = self.kontinuation[2]
+        k = self.kontinuation[3]
+        self.kontinuation = k
+
+        lib_env = Env()
+
+        val = env.get(name)
+        if val == tokens.pylsyntax.PylSyntax.sNil:
+            vals = lib_env.include_lib(name)
+            for lib in vals:
+                if not lib == tokens.pylsyntax.PylSyntax.sNil:
+                    if lib[0] == "py":
+                        self.env.update(lib[1])
+                    elif lib[0] == "pyl":
+                        self.kontinuation = Lst(self.c_load, lib[1],
+                                                self.kontinuation)
+        else:
+            lib_env = val
+
+        env.update(lib_env)
+
+        self.env = env
+        self.control = self.eval_value
+        return
+
+
+    ################################################################################
+    # Export
+    ################################################################################
     def s_export(self):
         if len(self.expr) < 2:
             raise errors.syntaxerror.PylispSyntaxError(
@@ -307,6 +471,10 @@ class VirtualMachine():
             self.export.append(self.expr[1].value)
         self.control = self.eval_kontinuation
 
+
+    ################################################################################
+    # Cond
+    ################################################################################
     def s_cond(self):
         if len(self.expr) < 2:
             raise errors.syntaxerror.PylispSyntaxError(
@@ -320,6 +488,32 @@ class VirtualMachine():
                                 self.kontinuation)
         self.control = self.eval_value
 
+    # Checks every condition until a true or else is found, then returns
+    # the corresponding return value
+    def c_cond(self):
+        cond = self.values
+        conditions = self.kontinuation[1]
+        return_values = self.kontinuation[2]
+        k = self.kontinuation[3]
+
+        if cond is True or cond == tokens.pylsyntax.PylSyntax.sElse:
+            self.expr = return_values[0]
+            self.kontinuation = k
+        elif len(conditions) > 0:
+            self.expr = conditions[0]
+            self.kontinuation = Lst(self.c_cond, conditions[1:],
+                                    return_values[1:], k)
+        else:
+            self.values = False
+            self.kontinuation = k
+
+        self.control = self.eval_value
+        return
+
+
+    ################################################################################
+    # Load
+    ################################################################################
     def s_load(self):
         if len(self.expr) < 2:
             raise errors.syntaxerror.PylispSyntaxError(
@@ -329,6 +523,21 @@ class VirtualMachine():
 
         self.expr = None
         self.control = self.eval_kontinuation
+
+    def c_load(self):
+        name = self.kontinuation[1]
+        k = self.kontinuation[2]
+
+        env = Env()
+
+        file_parse = fileparser.FileParser(name, VirtualMachine(env))
+        file_parse.run()
+
+        self.env.update(file_parse.vm.env)
+
+        self.kontinuation = k
+        self.control = self.eval_value
+        return
 
     def s_else(self):
         self.kontinuation = Lst(self.c_proc_func, self.expr[1:],
@@ -359,80 +568,6 @@ class VirtualMachine():
                 self.env[k] = v
         self.env.update(self.kontinuation[1])
         self.kontinuation = self.kontinuation[2]
-        return
-
-    def c_let(self):
-        args = self.values
-        body = self.kontinuation[1]
-        bind_left = self.kontinuation[2]
-        k = self.kontinuation[3]
-
-        init = {}
-
-        for x in bind_left:
-            init[x.value] = self.env.get(x.value)
-
-        self.env.set([x.value for x in bind_left] if len(bind_left) > 1 else
-                     bind_left[0].value, args)
-
-        self.expr = body
-        self.kontinuation = Lst(self.c_reset_env, init, k)
-        self.control = self.eval_value
-        return
-
-    def c_begin(self):
-        results = self.values
-        k = self.kontinuation[1]
-
-        self.kontinuation = k
-        self.values = results[-1] if self.values is not None else None
-        self.control = self.eval_kontinuation
-        return
-
-    def c_if(self):
-        condition = self.values
-        true = self.kontinuation[1]
-        false = self.kontinuation[2]
-        k = self.kontinuation[3]
-
-        if condition:
-            self.expr = true
-            self.kontinuation = k
-            self.control = self.eval_value
-            return
-        else:
-            self.expr = false
-            self.kontinuation = k
-            self.control = self.eval_value
-            return
-
-    def c_define(self):
-        value = self.values
-        symbol = self.kontinuation[1]
-
-        k = self.kontinuation[2]
-
-        self.env.set(symbol.value, value)
-        self.return_val = value
-        self.kontinuation = k
-        self.values = None
-        self.control = self.eval_kontinuation
-        return
-
-    def c_set(self):
-        value = self.values
-        symbol = self.kontinuation[1]
-
-        if self.env.get(symbol.value) == tokens.pylsyntax.PylSyntax.sNil:
-            raise errors.symbolnotfound.SymbolNotFound(symbol.value)
-
-        k = self.kontinuation[2]
-
-        self.env.set(symbol.value, value)
-        self.return_val = value
-        self.kontinuation = k
-        self.values = None
-        self.control = self.eval_kontinuation
         return
 
     # The first step in evaluating a function
@@ -492,99 +627,6 @@ class VirtualMachine():
             self.values = Lst(first)
 
         self.control = self.eval_kontinuation
-        return
-
-    # For definition of a library
-    # It creates its own environment, then binds all the export values into it
-    # Finally it adds the library to the main environment
-    def c_library(self):
-        name = self.kontinuation[1]
-        env = self.kontinuation[2]
-        k = self.kontinuation[3]
-        self.kontinuation = k
-
-        lib_env = Env()
-
-        if self.export:
-            for i in self.export:
-                # Gets all the dependants and adds it to the functions environment
-                if isinstance(self.env[i], tokens.function.Function):
-                    for ident, val in self.get_dependants(self.env[i], env):
-                        self.env[i].env.set(ident, val)
-
-                lib_env.set(i, self.env[i])
-
-            self.export = None
-
-        env.set(name, lib_env)
-        self.env = env
-        self.control = self.eval_value
-        return
-
-    # Import pulls a library from either the environment or as a standard
-    # library
-    def c_import(self):
-        name = self.kontinuation[1]
-        env = self.kontinuation[2]
-        k = self.kontinuation[3]
-        self.kontinuation = k
-
-        lib_env = Env()
-
-        val = env.get(name)
-        if val == tokens.pylsyntax.PylSyntax.sNil:
-            vals = lib_env.include_lib(name)
-            for lib in vals:
-                if not lib == tokens.pylsyntax.PylSyntax.sNil:
-                    if lib[0] == "py":
-                        self.env.update(lib[1])
-                    elif lib[0] == "pyl":
-                        self.kontinuation = Lst(self.c_load, lib[1],
-                                                self.kontinuation)
-        else:
-            lib_env = val
-
-        env.update(lib_env)
-
-        self.env = env
-        self.control = self.eval_value
-        return
-
-    # Checks every condition until a true or else is found, then returns
-    # the corresponding return value
-    def c_cond(self):
-        cond = self.values
-        conditions = self.kontinuation[1]
-        return_values = self.kontinuation[2]
-        k = self.kontinuation[3]
-
-        if cond is True or cond == tokens.pylsyntax.PylSyntax.sElse:
-            self.expr = return_values[0]
-            self.kontinuation = k
-        elif len(conditions) > 0:
-            self.expr = conditions[0]
-            self.kontinuation = Lst(self.c_cond, conditions[1:],
-                                    return_values[1:], k)
-        else:
-            self.values = False
-            self.kontinuation = k
-
-        self.control = self.eval_value
-        return
-
-    def c_load(self):
-        name = self.kontinuation[1]
-        k = self.kontinuation[2]
-
-        env = Env()
-
-        file_parse = fileparser.FileParser(name, VirtualMachine(env))
-        file_parse.run()
-
-        self.env.update(file_parse.vm.env)
-
-        self.kontinuation = k
-        self.control = self.eval_value
         return
 
     def eval_map_value(self):
@@ -647,7 +689,9 @@ class VirtualMachine():
         elif isinstance(self.func, tokens.function.Builtin):
             self.control = self.eval_kontinuation
 
-            if len(self.args) == self.func.arg_len or (self.func.has_unpack_args and len(self.args) > self.func.arg_len):
+            if len(self.args) == self.func.arg_len or (
+                self.func.has_unpack_args and len(self.args) >
+                self.func.arg_len):
                 try:
                     self.values = self.func(*self.args)
                 except TypeError:
