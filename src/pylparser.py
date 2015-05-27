@@ -9,16 +9,19 @@ from errors.syntaxerror import PylispSyntaxError
 
 
 class ParserTokens(Enum):
+    """
+    Used by the parser as placeholders between the lexing and ast conversion phases
+    """
     lstStart = 0
     lstEnd = 1
     cons = 2
     literalStart = 3
 
+
 class State(Enum):
     """
-    Every type which a token can embody
+    Used by the parser to determine what to do next
     """
-
     nil = 0
     comment = 1
     string = 2
@@ -31,7 +34,6 @@ class Parser:
     """
     Class responsible for parsing user input
     """
-
     def __init__(self):
         self.state = State.nil
         self.data = []
@@ -161,12 +163,16 @@ class Parser:
         return tree if len(tree) > 1 else (tree[0] if len(tree) > 0 else []), i
 
     def parse_cons(self, data):
+        """
+        Converts (x . y) to (cons x y)
+        """
         i = 0
         while i < len(data):
-            # Parses a literal
+            # Recurse into lists
             if isinstance(data[i], list):
                 return_val = self.parse_cons(data[i])
                 data[i] = return_val
+            # Deal with cons
             elif data[i] == ParserTokens.cons:
                 if i == 0:
                     raise PylispSyntaxError(data,
@@ -175,6 +181,7 @@ class Parser:
                     raise PylispSyntaxError(data,
                                             "Last item of pair can't be none")
 
+                # Shift the values around
                 data[i] = [tokens.symbol.Symbol("cons"),
                                          data[i - 1], data[i + 1]]
                 del data[i + 1]
