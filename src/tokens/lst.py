@@ -21,7 +21,7 @@ class Lst(Token, list):
         Overides list's getitem function to make that the value returned is always a Lst or if it is a single value it returns the value
         """
         result = list.__getitem__(self, item)
-        if isinstance(result, list) and not isinstance(result, Lst):
+        if type(result) == type(list()):
             return Lst(*result)
         else:
             return result
