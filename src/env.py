@@ -16,12 +16,14 @@ class Env(dict):
         """
         secEnv variable to allow an environment to inherit from a previous one
         """
+        # Beware mutable default args
         if not secondary_env:
             secondary_env = {}
+            
         dict.__init__(self)
         self.update(secondary_env)
 
-        # The standard library will be in PyLisp/std
+        # The standard library will be in PyLisp/PyLib
         self.std_path = os.path.join(
             os.path.dirname(os.path.dirname(getfile(Env))), "PyLib")
         self.std_libs = {}
@@ -29,11 +31,17 @@ class Env(dict):
         self.standard_env = ["core"]
 
     def get_libs(self):
+        """
+        Gets all the libraries in the std path and adds it to the std_libs variable
+        """
         for dirs in os.listdir(self.std_path):
             if os.path.isdir(os.path.join(self.std_path, dirs)) and not dirs.startswith("__"):
                 self.std_libs.update({os.path.basename(dirs): os.path.join(self.std_path, dirs)})
 
     def get_lib(self, path):
+        """
+        Gets all the python and pylisp files associated with a library amd returns it in a list
+        """
         return_list = [] 
         for root, dirs, files in os.walk(path):
             for i in files:
@@ -45,12 +53,16 @@ class Env(dict):
         return return_list
 
     def include_lib(self, lib):
+        """
+        Loops through the files for a library and imports each one
+        """
         path = self.std_libs.get(lib)
         if path is None:
             raise errors.librarynotfound.LibraryNotFound(lib)
         else:
             ret = []
             for val in self.get_lib(path):
+                # If it is a python file evaluate it and check for the module.export variable
                 if val.endswith(".py"):
                     pf = SourceFileLoader(lib, os.path.join(self.std_path, val))
                     try:
@@ -61,6 +73,7 @@ class Env(dict):
                             ret.append(("None", "No Export"))
                     except Exception as e:
                         raise errors.libraryerror.LibraryError(val, lib, e)
+                # Pylisp files are just returned for the caller of the function to deal with
                 elif val.endswith(".pyl"):
                     ret.append(("pyl", val))
 
@@ -79,4 +92,7 @@ class Env(dict):
             return vals
 
     def get(self, key, default=PylSyntax.sNil):
+        """
+        Just overrides the default env get with a default default
+        """
         return dict.get(self, key, default)
