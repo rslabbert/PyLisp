@@ -44,4 +44,4 @@ class Builtin(Token):
         return self.func(*self.args + args)
 
     def __repr__(self):
-        return "{}".format([self.value] + list(*self.args))
+        return "{}".format([self.value] + list(self.args))

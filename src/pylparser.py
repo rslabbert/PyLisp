@@ -54,6 +54,7 @@ class Parser:
         """
         current_token = ""
         self.state = State.nil
+        buf += " "
 
         for i in range(0, len(buf)):
             self.position += 1
@@ -106,6 +107,8 @@ class Parser:
                     self.position -= 1
                     return tokens.number.Number(current_token)
                 elif c.isdigit() or (c == "." and "." not in current_token):
+                    current_token += c
+                elif c == "-":
                     current_token += c
                 else:
                     raise PylispSyntaxError(current_token + c,
