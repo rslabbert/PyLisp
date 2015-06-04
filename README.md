@@ -1,5 +1,8 @@
 # PyLisp
 
+## TODO
+* Change the environment to a [ChainMap](https://docs.python.org/3/library/collections.html#collections.ChainMap), removing the need for fancy environment manipulation
+
 ## Dependencies
 * Python 3
 
