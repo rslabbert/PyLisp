@@ -44,7 +44,7 @@
 (define (zip-with f x y)
   (if (or (null? x) (null? y))
     []
-    (f (car x) (car y)) . (zip-with f (cdr x) (cdr y))))
+    [(f (car x) (car y))] . (zip-with f (cdr x) (cdr y))))
 
 (define (zip x y)
   (zip-with list x y))

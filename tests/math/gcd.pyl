@@ -8,5 +8,4 @@
       m
       (gcd m (modulo n m)))))
 
-(display (= 6 (gcd 12 6)))
-(newline)
+(displayln (= 6 (gcd 12 6)))
