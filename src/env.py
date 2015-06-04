@@ -1,3 +1,4 @@
+from collections import ChainMap
 import os
 from inspect import getfile
 from importlib.machinery import SourceFileLoader
@@ -7,21 +8,13 @@ import errors.libraryerror
 from tokens.pylsyntax import PylSyntax
 
 
-class Env(dict):
+class Env(ChainMap):
     """
     The environment which is used to find variables and symbols and their associated value
     """
 
-    def __init__(self, secondary_env=None):
-        """
-        secEnv variable to allow an environment to inherit from a previous one
-        """
-        # Beware mutable default args
-        if not secondary_env:
-            secondary_env = {}
-            
-        dict.__init__(self)
-        self.update(secondary_env)
+    def __init__(self, *maps):
+        ChainMap.__init__(self, *maps)
 
         # The standard library will be in PyLisp/PyLib
         self.std_path = os.path.join(
@@ -95,4 +88,4 @@ class Env(dict):
         """
         Just overrides the default env get with a default default
         """
-        return dict.get(self, key, default)
+        return ChainMap.get(self, key, default)

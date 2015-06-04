@@ -211,6 +211,7 @@ class VirtualMachine():
                 "let", "Less than two expressions")
         bindings = self.expr[1]
         body = self.expr[2]
+        self.env = self.env.new_child()
 
         # If there isn't a body then there are no bindings, so
         # shift everything
@@ -241,16 +242,11 @@ class VirtualMachine():
         bind_left = self.kontinuation[2]
         k = self.kontinuation[3]
 
-        init = {}
-
-        for x in bind_left:
-            init[x.value] = self.env.get(x.value)
-
         self.env.set([x.value for x in bind_left] if len(bind_left) > 1 else
                      bind_left[0].value, args)
 
         self.expr = body
-        self.kontinuation = [self.c_reset_env, init, k]
+        self.kontinuation = [self.c_reset_env, k]
         self.control = self.eval_value
         return
 
@@ -327,7 +323,7 @@ class VirtualMachine():
         if isinstance(self.expr[1], list):
             name = self.expr[1][0]
             self.values = tokens.function.Function(name, self.expr[1][1:],
-                                                   self.expr[2], Env())
+                                                   self.expr[2], {})
             self.control = self.eval_kontinuation
         else:
             name = self.expr[1]
@@ -381,8 +377,9 @@ class VirtualMachine():
         name = self.expr[1][0].value
 
         self.expr = self.expr[2:]
+        self.env = self.env.new_child()
 
-        self.kontinuation = [self.c_library, name, deepcopy(self.env),
+        self.kontinuation = [self.c_library, name,
                                 self.kontinuation]
         self.control = self.eval_value
 
@@ -391,9 +388,8 @@ class VirtualMachine():
     # Finally it adds the library to the main environment
     def c_library(self):
         name = self.kontinuation[1]
-        env = self.kontinuation[2]
-        k = self.kontinuation[3]
-        self.kontinuation = k
+        k = self.kontinuation[2]
+        self.kontinuation = [self.c_reset_env, k]
 
         lib_env = Env()
 
@@ -401,15 +397,14 @@ class VirtualMachine():
             for i in self.export:
                 # Gets all the dependants and adds it to the functions environment
                 if isinstance(self.env[i], tokens.function.Function):
-                    for ident, val in self.get_dependants(self.env[i], env):
-                        self.env[i].env.set(ident, val)
+                    for ident, val in self.get_dependants(self.env[i], self.env.parents):
+                        self.env[i].env[ident] = val
 
                 lib_env.set(i, self.env[i])
 
             self.export = None
 
-        env.set(name, lib_env)
-        self.env = env
+        self.env.maps[1][name] = lib_env
         self.control = self.eval_value
         return
 
@@ -422,7 +417,7 @@ class VirtualMachine():
             raise errors.syntaxerror.PylispSyntaxError("import",
                                                        "No to import provided")
         name = self.expr[1].value
-        self.kontinuation = [self.c_import, name, self.env,
+        self.kontinuation = [self.c_import, name,
                                 self.kontinuation]
         self.expr = None
         self.control = self.eval_kontinuation
@@ -431,13 +426,12 @@ class VirtualMachine():
     # library
     def c_import(self):
         name = self.kontinuation[1]
-        env = self.kontinuation[2]
-        k = self.kontinuation[3]
+        k = self.kontinuation[2]
         self.kontinuation = k
 
         lib_env = Env()
 
-        val = env.get(name)
+        val = self.env.get(name)
         if val == tokens.pylsyntax.PylSyntax.sNil:
             vals = lib_env.include_lib(name)
             for lib in vals:
@@ -450,9 +444,8 @@ class VirtualMachine():
         else:
             lib_env = val
 
-        env.update(lib_env)
+        self.env.update(lib_env)
 
-        self.env = env
         self.control = self.eval_value
         return
 
@@ -563,13 +556,14 @@ class VirtualMachine():
     # Used after certain expressions to reset the environment
     # This emulates local environments for functions and let expressions
     def c_reset_env(self):
-        for k, v in self.kontinuation[1].items():
-            if v == tokens.pylsyntax.PylSyntax.sNil:
-                del self.env[k]
-            else:
-                self.env[k] = v
-        self.env.update(self.kontinuation[1])
-        self.kontinuation = self.kontinuation[2]
+        # for k, v in self.kontinuation[1].items():
+            # if v == tokens.pylsyntax.PylSyntax.sNil:
+                # del self.env[k]
+            # else:
+                # self.env[k] = v
+        # self.env.update(self.kontinuation[1])
+        self.env = self.env.parents
+        self.kontinuation = self.kontinuation[1]
         return
 
     # The first step in evaluating a function
@@ -670,13 +664,9 @@ class VirtualMachine():
             # If the arguments are equal then evalute the function
             if len(self.args) == len(self.func.args):
                 env = self.func.get_env(*self.args)
+                self.env = self.env.new_child(m=env)
 
-                init = {}
-                for k in env.keys():
-                    init[k] = self.env.get(k)
-                self.env.update(env)
-
-                self.kontinuation = [self.c_reset_env, init,
+                self.kontinuation = [self.c_reset_env,
                                         self.kontinuation]
                 self.control = self.eval_value
 
