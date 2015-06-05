@@ -18,17 +18,16 @@ def main():
     else:
         from fileparser import FileParser
         from virtualmachine import VirtualMachine
-        from env import Env
 
-        env = Env()
-
-        parser = FileParser(sys.argv[1], VirtualMachine(env))
+        parser = FileParser(sys.argv[1], VirtualMachine({}))
         parser.load_std()
         parser.run()
 
 
 if __name__ == '__main__':
     try:
-        main()
+        import cProfile
+        cProfile.run("main()")
+        # main()
     except PylispError as e:
         print(e)
