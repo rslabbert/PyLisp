@@ -1,9 +1,8 @@
-from collections import ChainMap
 from os import name as osname
 from os import environ
 from os.path import expanduser, join
 
-import env
+from env import Env
 from pylparser import Parser
 from virtualmachine import VirtualMachine
 from fileparser import FileParser
@@ -46,16 +45,18 @@ class Interpreter():
 
         self.intro = "Welcome to the PyLisp interpreter"
 
-        self.vm = VirtualMachine(ChainMap())
-        self.load_std()
+        # Sets the global variable environment to the standard set
+        self.repl_env = Env()
+
+        self.vm = VirtualMachine(self.repl_env)
         self.registers = None
         
     def load_std(self):
         """
         Adds the core libraries to the environment
         """
-        for i in env.standard_env:
-            libs = env.include_lib(i)
+        for i in self.vm.env.standard_env:
+            libs = self.vm.env.include_lib(i)
             for lib in libs:
                 if lib[0] == "py":
                     self.vm.env.update(lib[1])

@@ -1,4 +1,3 @@
-import env
 from pylparser import Parser
 from errors.pylisperror import PylispError
 from errors.filenotfound import PylispFileNotFoundError
@@ -28,8 +27,8 @@ class FileParser():
         Adds all the core libraries to the environment
         """
         to_read = self.to_read
-        for i in env.standard_env:
-            libs = env.include_lib(i)
+        for i in self.vm.env.standard_env:
+            libs = self.vm.env.include_lib(i)
             for lib in libs:
                 if lib[0] == "py":
                     self.vm.env.update(lib[1])
