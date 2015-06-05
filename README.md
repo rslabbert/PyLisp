@@ -1,8 +1,5 @@
 # PyLisp
 
-## TODO
-* Make Env not be a subclass, instead use ChainMap directly. Migrate all specific env methods to a module
-
 ## Dependencies
 * Python 3
 
