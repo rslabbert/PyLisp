@@ -18,9 +18,9 @@ def main():
     else:
         from fileparser import FileParser
         from virtualmachine import VirtualMachine
-        from env import Env
+        from collections import ChainMap
 
-        env = Env()
+        env = ChainMap()
 
         parser = FileParser(sys.argv[1], VirtualMachine(env))
         parser.load_std()
