@@ -654,12 +654,18 @@ class VirtualMachine():
             if len(self.args) == len(self.func.args):
                 func_env = self.func.get_env(*self.args)
 
+
                 init = {}
                 for k in func_env.keys():
                     init[k] = self.env.get(k)
+
                 self.env.update(func_env)
 
-                self.kontinuation = [self.c_reset_env, init, self.kontinuation]
+                if self.kontinuation[0] == self.c_reset_env:
+                    self.kontinuation[1].update(init)
+                else:
+                    self.kontinuation = [self.c_reset_env, init, self.kontinuation]
+
                 self.control = self.eval_value
 
             # If it's more than, return an error

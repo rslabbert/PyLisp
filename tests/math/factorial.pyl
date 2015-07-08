@@ -1,8 +1,11 @@
 (import io)
 
-(define (fac n)
-  (if (= n 0)
-    1
-    (* n (fac (- n 1)))))
+(define (factorial n)
+    (begin
+        (define (fac n acc)
+            (if (= n 0)
+                acc
+                (fac (- n 1) (* n acc))))
+        (fac n 1)))
 
-(display (= 120 (fac 5)))
+(display (= 120 (factorial 5))
